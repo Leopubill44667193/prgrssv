@@ -1,0 +1,50 @@
+import Link from 'next/link'
+
+const simuladores = [
+  { id: 1, nombre: 'Simulador 1' },
+  { id: 2, nombre: 'Simulador 2' },
+  { id: 3, nombre: 'Simulador 3' },
+  { id: 4, nombre: 'Simulador 4' },
+]
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-black text-white">
+      <div className="border-b border-white/10 px-8 py-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-widest uppercase">OC.Hobbies.Racing</h1>
+          <p className="text-xs text-gray-500 tracking-wider uppercase mt-0.5">Av. 3 de Febrero 283</p>
+        </div>
+        <span className="text-xs text-gray-600 tracking-widest uppercase">Simuladores</span>
+      </div>
+
+      <div className="px-8 pt-16 pb-10 text-center">
+        <p className="text-xs tracking-[0.3em] uppercase text-gray-500 mb-3">Reservá tu turno</p>
+        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight">
+          Elegí tu<br />
+          <span className="text-red-500">simulador</span>
+        </h2>
+        <p className="text-gray-500 mt-4 text-sm">Turnos de 60 min · 15:00 a 02:00 · Todos los días</p>
+      </div>
+
+      <div className="px-8 pb-16 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        {simuladores.map((sim) => (
+          <Link
+            key={sim.id}
+            href={`/reservar/${sim.id}`}
+            className="group relative border border-white/10 rounded-xl p-6 hover:border-red-500 hover:bg-white/5 transition-all duration-200"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-lg font-black group-hover:border-red-500 group-hover:text-red-500 transition-colors">
+                {sim.id}
+              </div>
+              <span className="text-xs text-gray-600 group-hover:text-red-500 transition-colors">→</span>
+            </div>
+            <h3 className="text-lg font-bold tracking-wide uppercase">{sim.nombre}</h3>
+            <p className="text-xs text-gray-500 mt-1">Ver horarios disponibles</p>
+          </Link>
+        ))}
+      </div>
+    </main>
+  )
+}
