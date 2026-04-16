@@ -62,7 +62,7 @@ export default function ReservarPage() {
       clienteId = clienteExistente.id
     } else {
       const { data: nuevoCliente, error } = await supabase.from('clientes').insert({ nombre, telefono }).select('id').single()
-      if (error || !nuevoCliente) { alert('Error al guardar el cliente'); setCargando(false); return }
+      if (error || !nuevoCliente) { alert('Error al guardar el cliente: ' + (error?.message ?? 'sin datos')); setCargando(false); return }
       clienteId = nuevoCliente.id
     }
 
