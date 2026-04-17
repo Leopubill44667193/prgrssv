@@ -15,7 +15,7 @@ Sistema de reservas online para un local de simuladores de conduccion en Rojas.
 | Base de datos | Supabase (PostgreSQL) |
 | Auth admin | Contrasena hardcodeada en cliente + sessionStorage |
 | Notificaciones | CallMeBot (WhatsApp API gratuita) |
-| Deploy | Vercel |
+| Deploy | Vercel (sim-turnos.vercel.app) |
 
 ---
 
@@ -36,7 +36,7 @@ app/
   admin/
     page.tsx                  # Panel interno con grilla/tabla
   api/
-    notificar/route.ts        # POST server-side -> CallMeBot WhatsApp
+    notificar/route.ts        # POST server-side -> CallMeBot (hasta 2 numeros)
 lib/
   supabase.js                 # Cliente Supabase (anon key)
 ```
@@ -70,6 +70,8 @@ lib/
 | cancel_token | uuid | generado por Supabase, para cancelar sin login |
 | created_at | timestamptz | |
 
+**Constraint:** `UNIQUE (simulador_id, fecha, hora_inicio)` — evita doble reserva del mismo slot.
+
 ---
 
 ## Rutas
@@ -91,29 +93,31 @@ lib/
 - [x] Flujo de reserva grupal (`/reservar`): fecha, hora y multiples simuladores en un paso
 - [x] Flujo de reserva individual (`/reservar/[id]`): un simulador, hasta 4 horas
 - [x] Deduplicacion de clientes por telefono
-- [x] Pagina de confirmacion con resumen completo
+- [x] Pagina de confirmacion con resumen completo (fecha, hora, simuladores)
 - [x] Links de cancelacion individuales por simulador (uno por turno)
 - [x] Boton Compartir por WhatsApp con todos los datos de la reserva
 - [x] Cancelacion self-service por token unico sin login
-- [x] Notificacion WhatsApp al dueno al confirmar una reserva (CallMeBot)
-- [x] Notificacion WhatsApp al dueno al cancelar un turno (CallMeBot)
+- [x] Notificacion WhatsApp al confirmar una reserva (hasta 2 numeros via CallMeBot)
+- [x] Notificacion WhatsApp al cancelar un turno (hasta 2 numeros via CallMeBot)
 - [x] Panel admin: login por contrasena, vista grilla y vista tabla
 - [x] Eliminar turno desde el admin
 - [x] Selector de fecha en el admin
+- [x] Validacion de fecha minima (no se pueden reservar fechas pasadas)
+- [x] Bloqueo de horarios pasados dentro del dia actual
+- [x] Constraint UNIQUE en Supabase sobre (simulador_id, fecha, hora_inicio)
+- [x] `/reservar/[id]` pasa fecha y hora correctamente a `/confirmado`
 
 ---
 
 ## Lo que falta / deuda tecnica
 
 - [ ] **Metadata del sitio** — `layout.tsx` tiene el titulo por defecto "Create Next App"
-- [ ] **Validacion de fecha minima** — se puede reservar fechas pasadas
 - [ ] **Auth admin real** — la contrasena esta hardcodeada en el bundle del cliente (visible en el JS)
 - [ ] **RLS en Supabase** — la anon key tiene acceso total a todas las tablas
 - [ ] **Bloqueo de fechas/horarios** — no hay forma de cerrar dias o rangos desde el admin
 - [ ] **Limite por cliente** — un mismo telefono puede reservar todos los simuladores
 - [ ] **Timezone explicita** — `created_at` en admin resta 3 hs hardcodeado (UTC-3)
 - [ ] **Pagina 404 personalizada**
-- [ ] **`/reservar/[id]` no pasa fecha/hora a `/confirmado`** — el resumen queda sin fecha al venir desde esa ruta
 - [ ] **Latencia de CallMeBot** — el plan gratuito puede tardar 1-2 min en entregar el mensaje
 
 ---
@@ -121,22 +125,25 @@ lib/
 ## Decisiones tecnicas importantes
 
 ### Notificaciones server-side (no cliente)
-Las credenciales de CallMeBot (numero de telefono y apikey) viven en variables de entorno del servidor (`CALLMEBOT_PHONE`, `CALLMEBOT_APIKEY`). La llamada a CallMeBot se hace desde `app/api/notificar/route.ts`, nunca desde el browser. Esto evita exponer las credenciales en el bundle de JS.
+Las credenciales de CallMeBot viven en variables de entorno del servidor (`CALLMEBOT_PHONE`, `CALLMEBOT_APIKEY`, y opcionalmente `CALLMEBOT_PHONE_2`, `CALLMEBOT_APIKEY_2`). La llamada se hace desde `app/api/notificar/route.ts` con `Promise.all` para enviar a los dos numeros en paralelo. Nunca se exponen al browser.
 
 ### cancel_token en lugar de auth
-Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin que el cliente tenga cuenta ni login. El token se muestra en `/confirmado` y se puede compartir por WhatsApp. Es de un solo uso (al cancelar se borra el turno).
+Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login. El token se muestra en `/confirmado` y se puede compartir por WhatsApp.
 
 ### Deduplicacion de clientes por telefono
-Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si existe se reutiliza el id. Esto evita duplicados en la tabla `clientes` cuando el mismo cliente reserva varias veces.
+Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si existe se reutiliza el id.
 
 ### Calculo de hora_fin en cliente
-`hora_fin = (hora_inicio + 1) % 24` se calcula en el front antes de insertar. Funciona para el horario 15:00-02:00 (pasa medianoche). No hay logica de validacion de solapamiento — Supabase no tiene constraint UNIQUE sobre (simulador_id, fecha, hora_inicio) aunque deberia tenerlo.
+`hora_fin = (hora_inicio + 1) % 24` se calcula en el front antes de insertar. Maneja el cruce de medianoche correctamente.
+
+### Validacion de horarios pasados
+`horaValida(hora, fecha)` compara hora del slot vs hora actual del browser. Maneja el cruce de medianoche: horas 0-2 son "post-medianoche" y se tratan distinto segun si el browser esta antes o despues de las 3am.
 
 ### TypeScript con errores ignorados en build
-`next.config.ts` tiene `typescript: { ignoreBuildErrors: true }` y `eslint: { ignoreDuringBuilds: true }`. Permite deployar rapido pero oculta errores reales. Ideal revertir cuando el proyecto madure.
+`next.config.ts` tiene `typescript: { ignoreBuildErrors: true }` y `eslint: { ignoreDuringBuilds: true }`. Ideal revertir cuando el proyecto madure.
 
 ### Admin sin RLS
-El panel admin usa la misma anon key que el cliente publico. Cualquier usuario con las herramientas de dev puede leer o borrar turnos directamente desde el browser. Para produccion real habria que implementar RLS en Supabase o mover las operaciones admin a API routes con una service key.
+El panel admin usa la misma anon key que el cliente publico. Para produccion real habria que implementar RLS en Supabase o mover las operaciones admin a API routes con una service key.
 
 ---
 
@@ -148,11 +155,13 @@ NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 
 # CallMeBot WhatsApp (server-side, sin NEXT_PUBLIC_)
-CALLMEBOT_PHONE=549XXXXXXXXXX   # numero con codigo de pais, sin +
-CALLMEBOT_APIKEY=XXXXXX         # se obtiene activando el bot
+CALLMEBOT_PHONE=549XXXXXXXXXX      # numero principal
+CALLMEBOT_APIKEY=XXXXXX
+CALLMEBOT_PHONE_2=549XXXXXXXXXX    # numero secundario (opcional)
+CALLMEBOT_APIKEY_2=XXXXXX
 ```
 
-**En Vercel:** Settings -> Environment Variables. Las variables `CALLMEBOT_*` no llevan prefijo `NEXT_PUBLIC_` y no son accesibles desde el browser.
+**En Vercel:** Settings -> Environment Variables. Las 4 variables estan configuradas en produccion.
 
 ---
 
@@ -166,8 +175,8 @@ npm run dev
 # Limpiar cache y reiniciar
 rm -rf .next && npm run dev
 
-# Build de produccion
-npm run build
+# Push a produccion
+git add -p && git commit -m "..." && git push origin main
 ```
 
 ---
