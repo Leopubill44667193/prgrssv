@@ -8,7 +8,7 @@ export default function Home() {
           <h1 className="text-xl font-black tracking-widest uppercase">
             <span className="text-red-500">OC.</span>Hobbies.Racing
           </h1>
-          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">Av. 3 de Febrero 283 · Rosario</p>
+          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">Av. 3 de Febrero 283 · Rojas</p>
         </div>
         <div className="text-xs text-gray-600 tracking-widest uppercase text-right">
           <div>15:00 - 02:00</div>
@@ -29,7 +29,7 @@ export default function Home() {
       </div>
 
       <div className="border-t border-white/5 px-8 py-6 text-center">
-        <p className="text-xs text-gray-700 tracking-widest uppercase">OC.Hobbies.Racing · Rosario</p>
+        <p className="text-xs text-gray-700 tracking-widest uppercase">OC.Hobbies.Racing · Rojas</p>
       </div>
     </main>
   )

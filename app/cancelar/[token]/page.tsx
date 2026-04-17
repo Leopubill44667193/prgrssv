@@ -16,9 +16,26 @@ export default function CancelarPage({ params }: { params: Promise<{ token: stri
 
   async function cancelarTurno() {
     setEstado('cargando')
+    const { data: turno } = await supabase
+      .from('turnos')
+      .select('fecha, hora_inicio, simulador_id, clientes ( nombre, telefono )')
+      .eq('cancel_token', token)
+      .single()
     const { error } = await supabase.from('turnos').delete().eq('cancel_token', token)
-    if (error) setEstado('error')
-    else setEstado('cancelado')
+    if (error) { setEstado('error'); return }
+    setEstado('cancelado')
+    if (turno) {
+      const fechaFmt = new Date(turno.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+      const cliente = (turno as any).clientes
+      const clienteInfo = cliente ? `
+👤 ${cliente.nombre}
+📱 ${cliente.telefono}` : ''
+      const mensaje = `❌ Turno cancelado
+📅 ${fechaFmt}
+⏰ ${turno.hora_inicio.slice(0, 5)} hs
+🏎 Simulador ${turno.simulador_id}${clienteInfo}`
+      await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
+    }
   }
 
   if (estado === 'cargando') return (

@@ -11,6 +11,19 @@ const HORARIOS = [
 
 const SIMULADORES = [1, 2, 3, 4]
 
+function fechaMinima() {
+  return new Date().toLocaleDateString('en-CA')
+}
+
+function horaValida(hora: string, fecha: string): boolean {
+  if (fecha !== new Date().toLocaleDateString('en-CA')) return true
+  const ahora = new Date()
+  const horaActual = ahora.getHours()
+  const h = parseInt(hora)
+  if (horaActual < 3) return h >= 3 || h > horaActual
+  return h < 3 || h > horaActual
+}
+
 export default function ReservarPage() {
   const router = useRouter()
   const [fecha, setFecha] = useState('')
@@ -82,7 +95,21 @@ export default function ReservarPage() {
       tokens.push(turnoCreado.cancel_token)
     }
 
+    await notificarReserva(nombre, telefono, fecha, horaSeleccionada, simusSeleccionados)
     router.push(`/confirmado?tokens=${tokens.join(',')}&fecha=${fecha}&hora=${horaSeleccionada}&simus=${simusSeleccionados.join(',')}`)
+  }
+
+
+  async function notificarReserva(nombre: string, telefono: string, fecha: string, hora: string, simus: number[]) {
+    const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+    const simuTexto = simus.length === 1 ? 'Simulador ' + simus[0] : 'Simuladores ' + simus.join(', ')
+    const mensaje = `✅ Nueva reserva
+📅 ${fechaFmt}
+⏰ ${hora} hs
+🏎 ${simuTexto}
+👤 ${nombre}
+📱 ${telefono}`
+    await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
 
   const ocupadosEnHora = horaSeleccionada ? (ocupadosPorHora[horaSeleccionada] ?? []) : []
@@ -95,7 +122,7 @@ export default function ReservarPage() {
           <h1 className="text-xl font-black tracking-widest uppercase">
             <span className="text-red-500">OC.</span>Hobbies.Racing
           </h1>
-          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">Av. 3 de Febrero 283 · Rosario</p>
+          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">Av. 3 de Febrero 283 · Rojas</p>
         </div>
         <a href="/" className="text-xs text-gray-600 hover:text-red-500 tracking-widest uppercase transition">← Volver</a>
       </div>
@@ -111,6 +138,7 @@ export default function ReservarPage() {
             type="date"
             className="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-white focus:border-red-500 outline-none text-sm"
             value={fecha}
+            min={fechaMinima()}
             onChange={(e) => setFecha(e.target.value)}
           />
         </div>
@@ -122,7 +150,8 @@ export default function ReservarPage() {
             <div className="grid grid-cols-4 gap-2">
               {HORARIOS.map((hora) => {
                 const disp = disponiblesEnHora(hora)
-                const lleno = disp === 0
+                const pasado = !horaValida(hora, fecha)
+                const lleno = disp === 0 || pasado
                 const seleccionado = horaSeleccionada === hora
                 return (
                   <button
@@ -136,7 +165,7 @@ export default function ReservarPage() {
                   >
                     <span>{hora}</span>
                     <span className={'text-xs ' + (lleno ? 'text-gray-700' : seleccionado ? 'text-red-500/50' : 'text-gray-600')}>
-                      {lleno ? 'lleno' : disp + (disp === 1 ? ' libre' : ' libres')}
+                      {pasado ? 'pasado' : lleno ? 'lleno' : disp + (disp === 1 ? ' libre' : ' libres')}
                     </span>
                   </button>
                 )

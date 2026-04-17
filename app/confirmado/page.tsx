@@ -8,6 +8,7 @@ function Confirmado() {
   const tokens = (searchParams.get('tokens') ?? searchParams.get('token') ?? '').split(',').filter(Boolean)
   const fecha = searchParams.get('fecha') ?? ''
   const hora = searchParams.get('hora') ?? ''
+  const horas = hora.split(',').filter(Boolean)
   const simus = (searchParams.get('simus') ?? '').split(',').filter(Boolean)
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
@@ -16,7 +17,7 @@ function Confirmado() {
     : ''
 
   const waTexto = encodeURIComponent(
-    `Reserva OC.Hobbies.Racing\n📅 ${fechaFormateada}\n⏰ ${hora} hs\n🏎 Simulador${simus.length > 1 ? 'es' : ''} ${simus.join(', ')}\n\nLinks de cancelación:\n` +
+    `Reserva OC.Hobbies.Racing\n📅 ${fechaFormateada}\n⏰ ${horas.length > 1 ? horas.join(", ") : hora} hs\n🏎 Simulador${simus.length > 1 ? 'es' : ''} ${simus.join(', ')}\n\nLinks de cancelación:\n` +
     tokens.map((t, i) => `Sim ${simus[i] ?? i + 1}: ${origin}/cancelar/${t}`).join('\n')
   )
 
@@ -39,7 +40,7 @@ function Confirmado() {
           </div>
           <div>
             <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Horario</p>
-            <p className="text-sm font-medium">{hora} hs</p>
+            <p className="text-sm font-medium">{horas.length > 1 ? horas.join(' · ') + ' hs' : hora + ' hs'}</p>
           </div>
           <div className="col-span-2">
             <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">
