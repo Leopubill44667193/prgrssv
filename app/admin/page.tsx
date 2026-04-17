@@ -23,6 +23,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(false)
   const [fecha, setFecha] = useState(hoy())
   const [vista, setVista] = useState<'grilla' | 'tabla'>('grilla')
+  const [todasFechas, setTodasFechas] = useState(false)
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_ok') === '1') setAutenticado(true)
@@ -31,15 +32,16 @@ export default function Admin() {
   useEffect(() => {
     if (!autenticado) return
     fetchTurnos()
-  }, [autenticado, fecha])
+  }, [autenticado, fecha, todasFechas])
 
   const fetchTurnos = async () => {
     setLoading(true)
-    const { data, error } = await supabase
+    let query = supabase
       .from('turnos')
       .select('id, fecha, hora_inicio, hora_fin, simulador_id, created_at, clientes ( nombre, telefono ), simuladores ( nombre )')
-      .eq('fecha', fecha)
-      .order('hora_inicio', { ascending: true })
+    if (!todasFechas) query = query.eq('fecha', fecha)
+    query = query.order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
+    const { data, error } = await query
     if (!error && data) setTurnos(data)
     setLoading(false)
   }
@@ -106,15 +108,23 @@ export default function Admin() {
           <div>
             <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-1">Panel</p>
             <h1 className="text-3xl font-black uppercase">Admin</h1>
-            <p className="text-gray-600 text-sm mt-1 capitalize">{fechaFormateada} · {turnos.length} turnos</p>
+            <p className="text-gray-600 text-sm mt-1 capitalize">{todasFechas ? 'Todas las fechas' : fechaFormateada} · {turnos.length} turnos</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none text-sm focus:border-red-500"
-            />
+            <button
+              onClick={() => setTodasFechas(!todasFechas)}
+              className={'px-4 py-2 rounded-xl text-xs uppercase tracking-widest transition border ' + (todasFechas ? 'bg-red-500 border-red-500 text-white' : 'border-white/10 text-gray-500 hover:text-white')}
+            >
+              Todas
+            </button>
+            {!todasFechas && (
+              <input
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none text-sm focus:border-red-500"
+              />
+            )}
             <div className="flex border border-white/10 rounded-xl overflow-hidden text-xs">
               <button
                 onClick={() => setVista('grilla')}
@@ -192,6 +202,7 @@ export default function Admin() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
+                  {todasFechas && <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Fecha</th>}
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Simulador</th>
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Cliente</th>
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Telefono</th>
@@ -203,6 +214,7 @@ export default function Admin() {
               <tbody>
                 {turnos.map((t) => (
                   <tr key={t.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                    {todasFechas && <td className="p-4 text-gray-400 text-xs">{new Date(t.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</td>}
                     <td className="p-4 font-medium">{t.simuladores?.nombre}</td>
                     <td className="p-4">{t.clientes?.nombre}</td>
                     <td className="p-4 text-gray-400">{t.clientes?.telefono}</td>
