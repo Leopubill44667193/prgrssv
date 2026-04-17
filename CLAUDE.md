@@ -102,6 +102,7 @@ lib/
 - [x] Panel admin: login por contrasena, vista grilla y vista tabla
 - [x] Eliminar turno desde el admin
 - [x] Selector de fecha en el admin
+- [x] Vista "Todas las fechas" en admin — tabla con todos los turnos sin filtro de fecha
 - [x] Validacion de fecha minima (no se pueden reservar fechas pasadas)
 - [x] Bloqueo de horarios pasados dentro del dia actual
 - [x] Constraint UNIQUE en Supabase sobre (simulador_id, fecha, hora_inicio)
@@ -138,6 +139,9 @@ Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si
 
 ### Validacion de horarios pasados
 `horaValida(hora, fecha)` compara hora del slot vs hora actual del browser. Maneja el cruce de medianoche: horas 0-2 son "post-medianoche" y se tratan distinto segun si el browser esta antes o despues de las 3am.
+
+### Supabase client tolerante a build time
+`lib/supabase.js` usa fallback `|| placeholder` en las vars para evitar crash durante el prerender de Next.js en Vercel. En runtime las vars reales siempre están disponibles.
 
 ### TypeScript con errores ignorados en build
 `next.config.ts` tiene `typescript: { ignoreBuildErrors: true }` y `eslint: { ignoreDuringBuilds: true }`. Ideal revertir cuando el proyecto madure.
