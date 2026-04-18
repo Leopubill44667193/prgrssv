@@ -31,6 +31,7 @@ export default function ReservarPage({ params }) {
   const [telefono, setTelefono] = useState('')
   const [cargando, setCargando] = useState(false)
   const [horasOcupadas, setHorasOcupadas] = useState([])
+  const [fechaBloqueada, setFechaBloqueada] = useState(false)
 
   useEffect(() => {
     params.then((p) => setSimuladorId(p.id))
@@ -38,15 +39,15 @@ export default function ReservarPage({ params }) {
 
   useEffect(() => {
     if (!fecha || !simuladorId) return
-    const fetchHorasOcupadas = async () => {
-      const { data } = await supabase
-        .from('turnos')
-        .select('hora_inicio')
-        .eq('simulador_id', Number(simuladorId))
-        .eq('fecha', fecha)
-      if (data) setHorasOcupadas(data.map((t) => t.hora_inicio.slice(0, 5)))
+    const fetchDatos = async () => {
+      const [{ data: turnosData }, { data: bloqueo }] = await Promise.all([
+        supabase.from('turnos').select('hora_inicio').eq('simulador_id', Number(simuladorId)).eq('fecha', fecha),
+        supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).single(),
+      ])
+      setFechaBloqueada(!!bloqueo)
+      if (turnosData) setHorasOcupadas(turnosData.map((t) => t.hora_inicio.slice(0, 5)))
     }
-    fetchHorasOcupadas()
+    fetchDatos()
     setHorasSeleccionadas([])
   }, [fecha, simuladorId])
 
@@ -124,7 +125,14 @@ export default function ReservarPage({ params }) {
           <input type="date" className="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-white focus:border-red-500 outline-none text-sm" value={fecha} min={fechaMinima()} onChange={(e) => setFecha(e.target.value)} />
         </div>
 
-        {fecha && (
+        {fecha && fechaBloqueada && (
+          <div className="mb-8 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-5 py-4">
+            <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">Día no disponible</p>
+            <p className="text-yellow-700 text-xs">El local no abre este día. Elegí otra fecha.</p>
+          </div>
+        )}
+
+        {fecha && !fechaBloqueada && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
               <label className="block text-xs uppercase tracking-widest text-gray-500">Horario disponible</label>

@@ -24,6 +24,9 @@ export default function Admin() {
   const [fecha, setFecha] = useState(hoy())
   const [vista, setVista] = useState<'grilla' | 'tabla'>('grilla')
   const [todasFechas, setTodasFechas] = useState(false)
+  const [diaBloqueado, setDiaBloqueado] = useState<{ motivo: string } | null>(null)
+  const [mostrandoFormBloqueo, setMostrandoFormBloqueo] = useState(false)
+  const [motivoInput, setMotivoInput] = useState('')
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_ok') === '1') setAutenticado(true)
@@ -32,6 +35,8 @@ export default function Admin() {
   useEffect(() => {
     if (!autenticado) return
     fetchTurnos()
+    if (!todasFechas) fetchBloqueo()
+    else setDiaBloqueado(null)
   }, [autenticado, fecha, todasFechas])
 
   const fetchTurnos = async () => {
@@ -46,12 +51,37 @@ export default function Admin() {
     setLoading(false)
   }
 
+  const fetchBloqueo = async () => {
+    const { data } = await supabase
+      .from('dias_bloqueados')
+      .select('motivo')
+      .eq('fecha', fecha)
+      .single()
+    setDiaBloqueado(data ?? null)
+    setMostrandoFormBloqueo(false)
+    setMotivoInput('')
+  }
+
+  const bloquearDia = async () => {
+    const { error } = await supabase
+      .from('dias_bloqueados')
+      .upsert({ fecha, motivo: motivoInput.trim() || null }, { onConflict: 'fecha' })
+    if (error) {
+      alert('Error al bloquear: ' + error.message)
+      return
+    }
+    fetchBloqueo()
+  }
+
+  const desbloquearDia = async () => {
+    await supabase.from('dias_bloqueados').delete().eq('fecha', fecha)
+    setDiaBloqueado(null)
+  }
+
   const handleDelete = async (id) => {
     if (!window.confirm('Eliminar este turno?')) return
     const { error } = await supabase.from('turnos').delete().eq('id', id)
-    if (!error) {
-      setTurnos(turnos.filter((t) => t.id !== id))
-    }
+    if (!error) setTurnos(turnos.filter((t) => t.id !== id))
   }
 
   function login() {
@@ -64,7 +94,6 @@ export default function Admin() {
     }
   }
 
-  // Pantalla de login
   if (!autenticado) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-8">
@@ -88,7 +117,6 @@ export default function Admin() {
     )
   }
 
-  // Grilla: filas = horarios, columnas = simuladores
   const grillaMap: Record<string, Record<number, any>> = {}
   for (const t of turnos) {
     const h = t.hora_inicio.slice(0, 5)
@@ -104,7 +132,7 @@ export default function Admin() {
     <main className="min-h-screen bg-black text-white p-8">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+        <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
           <div>
             <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-1">Panel</p>
             <h1 className="text-3xl font-black uppercase">Admin</h1>
@@ -148,6 +176,59 @@ export default function Admin() {
           </div>
         </div>
 
+        {/* Banner / control de bloqueo */}
+        {!todasFechas && (
+          <div className="mb-6">
+            {diaBloqueado ? (
+              <div className="flex items-center justify-between bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-5 py-3">
+                <div>
+                  <span className="text-yellow-400 font-bold text-sm uppercase tracking-widest">Día bloqueado</span>
+                  {diaBloqueado.motivo && (
+                    <span className="text-yellow-600 text-sm ml-3">· {diaBloqueado.motivo}</span>
+                  )}
+                </div>
+                <button
+                  onClick={desbloquearDia}
+                  className="text-xs uppercase tracking-widest text-yellow-600 hover:text-yellow-400 transition"
+                >
+                  Desbloquear
+                </button>
+              </div>
+            ) : mostrandoFormBloqueo ? (
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-5 py-3">
+                <input
+                  type="text"
+                  value={motivoInput}
+                  onChange={e => setMotivoInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && bloquearDia()}
+                  placeholder="Motivo (opcional)"
+                  className="flex-1 bg-transparent text-white text-sm outline-none placeholder-gray-700"
+                  autoFocus
+                />
+                <button
+                  onClick={bloquearDia}
+                  className="text-xs uppercase tracking-widest text-yellow-400 hover:text-yellow-300 font-bold transition"
+                >
+                  Confirmar
+                </button>
+                <button
+                  onClick={() => { setMostrandoFormBloqueo(false); setMotivoInput('') }}
+                  className="text-xs uppercase tracking-widest text-gray-600 hover:text-gray-400 transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setMostrandoFormBloqueo(true)}
+                className="text-xs uppercase tracking-widest text-gray-600 hover:text-yellow-500 transition border border-white/5 hover:border-yellow-500/30 rounded-xl px-5 py-3 w-full text-left"
+              >
+                + Bloquear este día
+              </button>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <p className="text-gray-600 tracking-widest uppercase text-sm">Cargando...</p>
         ) : turnos.length === 0 && vista === 'tabla' ? (
@@ -173,7 +254,11 @@ export default function Admin() {
                       const turno = grillaMap[hora]?.[simId]
                       return (
                         <td key={simId} className="p-2">
-                          {turno ? (
+                          {diaBloqueado ? (
+                            <div className="rounded-lg p-2 text-center border border-yellow-500/10 text-yellow-900 text-xs">
+                              bloq.
+                            </div>
+                          ) : turno ? (
                             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center group relative">
                               <p className="text-xs font-bold text-red-400 truncate">{turno.clientes?.nombre}</p>
                               <p className="text-xs text-gray-600">{turno.clientes?.telefono}</p>

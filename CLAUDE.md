@@ -58,6 +58,14 @@ lib/
 | id | int (1-4) |
 | nombre | text |
 
+### `dias_bloqueados`
+| campo | tipo | notas |
+|-------|------|-------|
+| fecha | date PK | |
+| motivo | text | nullable (ej: "Feriado", "Mantenimiento") |
+
+RLS deshabilitado (misma anon key que el resto).
+
 ### `turnos`
 | campo | tipo | notas |
 |-------|------|-------|
@@ -115,7 +123,7 @@ lib/
 - [ ] **Metadata del sitio** — `layout.tsx` tiene el titulo por defecto "Create Next App"
 - [ ] **Auth admin real** — la contrasena esta hardcodeada en el bundle del cliente (visible en el JS)
 - [ ] **RLS en Supabase** — la anon key tiene acceso total a todas las tablas
-- [ ] **Bloqueo de fechas/horarios** — no hay forma de cerrar dias o rangos desde el admin
+- [x] **Bloqueo de fechas** — desde el admin se puede bloquear/desbloquear un día con motivo opcional
 - [ ] **Limite por cliente** — un mismo telefono puede reservar todos los simuladores
 - [ ] **Timezone explicita** — `created_at` en admin resta 3 hs hardcodeado (UTC-3)
 - [ ] **Pagina 404 personalizada**

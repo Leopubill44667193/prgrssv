@@ -33,23 +33,25 @@ export default function ReservarPage() {
   const [telefono, setTelefono] = useState('')
   const [cargando, setCargando] = useState(false)
   const [ocupadosPorHora, setOcupadosPorHora] = useState<Record<string, number[]>>({})
+  const [fechaBloqueada, setFechaBloqueada] = useState(false)
 
   useEffect(() => {
     if (!fecha) return
-    const fetchOcupados = async () => {
-      const { data } = await supabase
-        .from('turnos')
-        .select('hora_inicio, simulador_id')
-        .eq('fecha', fecha)
+    const fetchDatos = async () => {
+      const [{ data: turnosData }, { data: bloqueo }] = await Promise.all([
+        supabase.from('turnos').select('hora_inicio, simulador_id').eq('fecha', fecha),
+        supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).single(),
+      ])
+      setFechaBloqueada(!!bloqueo)
       const mapa: Record<string, number[]> = {}
-      for (const t of data ?? []) {
+      for (const t of turnosData ?? []) {
         const h = t.hora_inicio.slice(0, 5)
         if (!mapa[h]) mapa[h] = []
         mapa[h].push(t.simulador_id)
       }
       setOcupadosPorHora(mapa)
     }
-    fetchOcupados()
+    fetchDatos()
     setHoraSeleccionada('')
     setSimusSeleccionados([])
   }, [fecha])
@@ -143,8 +145,16 @@ export default function ReservarPage() {
           />
         </div>
 
+        {/* Fecha bloqueada */}
+        {fecha && fechaBloqueada && (
+          <div className="mb-8 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-5 py-4">
+            <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">Día no disponible</p>
+            <p className="text-yellow-700 text-xs">El local no abre este día. Elegí otra fecha.</p>
+          </div>
+        )}
+
         {/* Horario */}
-        {fecha && (
+        {fecha && !fechaBloqueada && (
           <div className="mb-8">
             <label className="block text-xs uppercase tracking-widest text-gray-500 mb-3">Horario</label>
             <div className="grid grid-cols-4 gap-2">
