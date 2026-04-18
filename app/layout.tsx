@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { negocio } from "@/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OC.Hobbies.Racing — Reservas",
-  description: "Reservá tu turno en los simuladores de conducción. 4 simuladores · Turnos de 60 min · Av. 3 de Febrero 283, Rojas.",
+  title: `${negocio.nombre} — Reservas`,
+  description: `Reservá tu turno en ${negocio.nombre}. ${negocio.recursos.length} ${negocio.recursoNombre.toLowerCase()}s · Turnos de ${negocio.duracionMinutos} min · ${negocio.direccion}.`,
   openGraph: {
-    title: "OC.Hobbies.Racing — Reservas",
-    description: "Reservá tu turno en los simuladores de conducción. 4 simuladores · Turnos de 60 min · Av. 3 de Febrero 283, Rojas.",
-    siteName: "OC.Hobbies.Racing",
+    title: `${negocio.nombre} — Reservas`,
+    description: `Reservá tu turno en ${negocio.nombre}. ${negocio.recursos.length} ${negocio.recursoNombre.toLowerCase()}s · Turnos de ${negocio.duracionMinutos} min · ${negocio.direccion}.`,
+    siteName: negocio.nombre,
     locale: "es_AR",
     type: "website",
   },

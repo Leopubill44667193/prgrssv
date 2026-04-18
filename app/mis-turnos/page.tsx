@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { negocio } from '@/config'
 
 type Turno = {
   id: string
@@ -62,7 +63,7 @@ export default function MisTurnosPage() {
   return (
     <main className="min-h-screen bg-black text-white p-8 max-w-lg mx-auto">
       <div className="mt-12 mb-10">
-        <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-3">OC.Hobbies.Racing</p>
+        <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-3">{negocio.nombre}</p>
         <h1 className="text-4xl font-black uppercase tracking-tight">Mis<br /><span className="text-red-500">turnos</span></h1>
       </div>
 
@@ -90,10 +91,7 @@ export default function MisTurnosPage() {
       {noEncontrado && (
         <div className="text-center py-8">
           <p className="text-gray-500 text-sm mb-6">No encontramos reservas con ese telefono.</p>
-          <Link
-            href="/reservar"
-            className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm"
-          >
+          <Link href="/reservar" className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
             Reservar ahora
           </Link>
         </div>
@@ -103,10 +101,7 @@ export default function MisTurnosPage() {
         <div className="text-center py-8">
           <p className="text-white font-bold mb-1">Hola, {nombre}</p>
           <p className="text-gray-500 text-sm mb-6">No tenes turnos proximos.</p>
-          <Link
-            href="/reservar"
-            className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm"
-          >
+          <Link href="/reservar" className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
             Reservar ahora
           </Link>
         </div>
@@ -122,7 +117,7 @@ export default function MisTurnosPage() {
             <div key={t.id} className="border border-white/10 rounded-2xl p-4 flex items-center justify-between">
               <div>
                 <p className="font-bold capitalize">{formatearFecha(t.fecha)}</p>
-                <p className="text-gray-400 text-sm">{t.hora_inicio.slice(0, 5)} hs · Simulador {t.simulador_id}</p>
+                <p className="text-gray-400 text-sm">{t.hora_inicio.slice(0, 5)} hs · {negocio.recursoNombre} {t.simulador_id}</p>
               </div>
               <Link
                 href={`/cancelar/${t.cancel_token}`}

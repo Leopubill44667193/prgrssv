@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { negocio } from '@/config'
 
 type TurnoDetalle = {
   id: string
@@ -35,13 +36,7 @@ export default function CancelarTokenPage() {
       }
 
       const cliente = Array.isArray(data.clientes) ? data.clientes[0] : data.clientes
-      setTurno({
-        id: data.id,
-        fecha: data.fecha,
-        hora_inicio: data.hora_inicio,
-        simulador_id: data.simulador_id,
-        cliente,
-      })
+      setTurno({ id: data.id, fecha: data.fecha, hora_inicio: data.hora_inicio, simulador_id: data.simulador_id, cliente })
       setEstado('encontrado')
     }
     cargar()
@@ -56,7 +51,7 @@ export default function CancelarTokenPage() {
     const fechaFormateada = new Date(turno.fecha + 'T12:00:00').toLocaleDateString('es-AR', {
       weekday: 'long', day: 'numeric', month: 'long'
     })
-    const mensaje = `❌ Turno cancelado\n👤 ${turno.cliente.nombre}\n📅 ${fechaFormateada}\n⏰ ${turno.hora_inicio.slice(0, 5)} hs\n🏎 Simulador ${turno.simulador_id}`
+    const mensaje = `❌ Turno cancelado\n👤 ${turno.cliente.nombre}\n📅 ${fechaFormateada}\n⏰ ${turno.hora_inicio.slice(0, 5)} hs\n🏎 ${negocio.recursoNombre} ${turno.simulador_id}`
 
     await fetch('/api/notificar', {
       method: 'POST',
@@ -76,7 +71,7 @@ export default function CancelarTokenPage() {
   return (
     <main className="min-h-screen bg-black text-white p-8 max-w-lg mx-auto">
       <div className="mt-12 mb-10">
-        <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-3">OC.Hobbies.Racing</p>
+        <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-3">{negocio.nombre}</p>
         <h1 className="text-4xl font-black uppercase tracking-tight">Cancelar<br /><span className="text-red-500">turno</span></h1>
       </div>
 
@@ -109,8 +104,8 @@ export default function CancelarTokenPage() {
                 <p className="font-bold">{turno.hora_inicio.slice(0, 5)} hs</p>
               </div>
               <div>
-                <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">Simulador</p>
-                <p className="font-bold">Simulador {turno.simulador_id}</p>
+                <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">{negocio.recursoNombre}</p>
+                <p className="font-bold">{negocio.recursoNombre} {turno.simulador_id}</p>
               </div>
             </div>
           </div>

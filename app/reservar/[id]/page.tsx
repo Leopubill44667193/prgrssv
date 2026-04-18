@@ -3,26 +3,17 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { negocio } from '@/config'
+import { generarHorarios, calcularUmbral, horaValida } from '@/lib/config'
 
-const HORARIOS = [
-  '15:00', '16:00', '17:00', '18:00', '19:00',
-  '20:00', '21:00', '22:00', '23:00', '00:00', '01:00'
-]
+const HORARIOS = generarHorarios(negocio.horario.inicio, negocio.horario.fin)
+const UMBRAL = calcularUmbral(negocio.horario.fin)
 
 function fechaMinima() {
   return new Date().toLocaleDateString('en-CA')
 }
 
-function horaValida(hora: string, fecha: string): boolean {
-  if (fecha !== new Date().toLocaleDateString('en-CA')) return true
-  const ahora = new Date()
-  const horaActual = ahora.getHours()
-  const h = parseInt(hora)
-  if (horaActual < 3) return h >= 3 || h > horaActual
-  return h < 3 || h > horaActual
-}
-
-export default function ReservarPage({ params }) {
+export default function ReservarIdPage({ params }) {
   const router = useRouter()
   const [simuladorId, setSimuladorId] = useState('')
   const [fecha, setFecha] = useState('')
@@ -90,16 +81,10 @@ export default function ReservarPage({ params }) {
     router.push(`/confirmado?tokens=${tokens.join(',')}&fecha=${fecha}&hora=${horasSeleccionadas.join(',')}&simus=${simuladorId}`)
   }
 
-
   async function notificarReserva(nombre: string, telefono: string, fecha: string, horas: string[], simId: string) {
     const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
     const horasTexto = horas.length === 1 ? horas[0] + ' hs' : horas.join(', ') + ' hs'
-    const mensaje = `✅ Nueva reserva
-📅 ${fechaFmt}
-⏰ ${horasTexto}
-🏎 Simulador ${simId}
-👤 ${nombre}
-📱 ${telefono}`
+    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${horasTexto}\n🏎 ${negocio.recursoNombre} ${simId}\n👤 ${nombre}\n📱 ${telefono}`
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
 
@@ -108,17 +93,18 @@ export default function ReservarPage({ params }) {
       <div className="border-b border-white/10 px-8 py-5 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-black tracking-widest uppercase">
-            <span className="text-red-500">OC.</span>Hobbies.Racing
+            <span className="text-red-500">{negocio.nombre.split('.')[0]}.</span>
+            {negocio.nombre.split('.').slice(1).join('.')}
           </h1>
-          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">Av. 3 de Febrero 283 · Rojas</p>
+          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">{negocio.direccion}</p>
         </div>
         <a href="/" className="text-xs text-gray-600 hover:text-red-500 tracking-widest uppercase transition">← Volver</a>
       </div>
 
       <div className="max-w-xl mx-auto px-8 py-12">
         <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-2">Reserva</p>
-        <h2 className="text-4xl font-black uppercase mb-1">Simulador {simuladorId}</h2>
-        <p className="text-gray-600 text-sm mb-10">Turnos de 60 min · 15:00 a 02:00</p>
+        <h2 className="text-4xl font-black uppercase mb-1">{negocio.recursoNombre} {simuladorId}</h2>
+        <p className="text-gray-600 text-sm mb-10">Turnos de {negocio.duracionMinutos} min · Hasta 4 turnos</p>
 
         <div className="mb-8">
           <label className="block text-xs uppercase tracking-widest text-gray-500 mb-3">Fecha</label>
@@ -144,7 +130,7 @@ export default function ReservarPage({ params }) {
             </div>
             <div className="grid grid-cols-4 gap-2">
               {HORARIOS.map((hora) => {
-                const ocupado = horasOcupadas.includes(hora) || !horaValida(hora, fecha)
+                const ocupado = horasOcupadas.includes(hora) || !horaValida(hora, fecha, UMBRAL)
                 const seleccionado = horasSeleccionadas.includes(hora)
                 const lleno = !seleccionado && horasSeleccionadas.length >= 4
                 return (

@@ -3,32 +3,22 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { negocio } from '@/config'
+import { generarHorarios, calcularUmbral, horaValida, formatHora } from '@/lib/config'
 
-const HORARIOS = [
-  '15:00', '16:00', '17:00', '18:00', '19:00',
-  '20:00', '21:00', '22:00', '23:00', '00:00', '01:00'
-]
-
-const SIMULADORES = [1, 2, 3, 4]
+const HORARIOS = generarHorarios(negocio.horario.inicio, negocio.horario.fin)
+const RECURSOS = negocio.recursos
+const UMBRAL = calcularUmbral(negocio.horario.fin)
 
 function fechaMinima() {
   return new Date().toLocaleDateString('en-CA')
-}
-
-function horaValida(hora: string, fecha: string): boolean {
-  if (fecha !== new Date().toLocaleDateString('en-CA')) return true
-  const ahora = new Date()
-  const horaActual = ahora.getHours()
-  const h = parseInt(hora)
-  if (horaActual < 3) return h >= 3 || h > horaActual
-  return h < 3 || h > horaActual
 }
 
 export default function ReservarPage() {
   const router = useRouter()
   const [fecha, setFecha] = useState('')
   const [horaSeleccionada, setHoraSeleccionada] = useState('')
-  const [simusSeleccionados, setSimusSeleccionados] = useState<number[]>([])
+  const [recursosSeleccionados, setRecursosSeleccionados] = useState<number[]>([])
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -53,18 +43,18 @@ export default function ReservarPage() {
     }
     fetchDatos()
     setHoraSeleccionada('')
-    setSimusSeleccionados([])
+    setRecursosSeleccionados([])
   }, [fecha])
 
   function seleccionarHora(hora: string) {
     setHoraSeleccionada(hora)
-    setSimusSeleccionados([])
+    setRecursosSeleccionados([])
   }
 
-  function toggleSim(id: number) {
+  function toggleRecurso(id: number) {
     const ocupados = ocupadosPorHora[horaSeleccionada] ?? []
     if (ocupados.includes(id)) return
-    setSimusSeleccionados((prev) =>
+    setRecursosSeleccionados((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     )
   }
@@ -85,7 +75,7 @@ export default function ReservarPage() {
     const horaFin = String((horas + 1) % 24).padStart(2, '0') + ':' + String(minutos).padStart(2, '0')
 
     const tokens: string[] = []
-    for (const simId of simusSeleccionados) {
+    for (const simId of recursosSeleccionados) {
       const { data: turnoCreado, error: errorTurno } = await supabase.from('turnos').insert({
         simulador_id: simId,
         cliente_id: clienteId,
@@ -93,38 +83,35 @@ export default function ReservarPage() {
         hora_inicio: horaSeleccionada,
         hora_fin: horaFin,
       }).select('cancel_token').single()
-      if (errorTurno || !turnoCreado) { alert('Error al guardar turno en simulador ' + simId); setCargando(false); return }
+      if (errorTurno || !turnoCreado) { alert('Error al guardar turno en ' + negocio.recursoNombre + ' ' + simId); setCargando(false); return }
       tokens.push(turnoCreado.cancel_token)
     }
 
-    await notificarReserva(nombre, telefono, fecha, horaSeleccionada, simusSeleccionados)
-    router.push(`/confirmado?tokens=${tokens.join(',')}&fecha=${fecha}&hora=${horaSeleccionada}&simus=${simusSeleccionados.join(',')}`)
+    await notificarReserva(nombre, telefono, fecha, horaSeleccionada, recursosSeleccionados)
+    router.push(`/confirmado?tokens=${tokens.join(',')}&fecha=${fecha}&hora=${horaSeleccionada}&simus=${recursosSeleccionados.join(',')}`)
   }
 
-
-  async function notificarReserva(nombre: string, telefono: string, fecha: string, hora: string, simus: number[]) {
+  async function notificarReserva(nombre: string, telefono: string, fecha: string, hora: string, recursos: number[]) {
     const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
-    const simuTexto = simus.length === 1 ? 'Simulador ' + simus[0] : 'Simuladores ' + simus.join(', ')
-    const mensaje = `✅ Nueva reserva
-📅 ${fechaFmt}
-⏰ ${hora} hs
-🏎 ${simuTexto}
-👤 ${nombre}
-📱 ${telefono}`
+    const recursoTexto = recursos.length === 1
+      ? `${negocio.recursoNombre} ${recursos[0]}`
+      : `${negocio.recursoNombre}s ${recursos.join(', ')}`
+    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${hora} hs\n🏎 ${recursoTexto}\n👤 ${nombre}\n📱 ${telefono}`
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
 
   const ocupadosEnHora = horaSeleccionada ? (ocupadosPorHora[horaSeleccionada] ?? []) : []
-  const disponiblesEnHora = (hora: string) => SIMULADORES.length - (ocupadosPorHora[hora] ?? []).length
+  const disponiblesEnHora = (hora: string) => RECURSOS.length - (ocupadosPorHora[hora] ?? []).length
 
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="border-b border-white/10 px-8 py-5 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-black tracking-widest uppercase">
-            <span className="text-red-500">OC.</span>Hobbies.Racing
+            <span className="text-red-500">{negocio.nombre.split('.')[0]}.</span>
+            {negocio.nombre.split('.').slice(1).join('.')}
           </h1>
-          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">Av. 3 de Febrero 283 · Rojas</p>
+          <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">{negocio.direccion}</p>
         </div>
         <a href="/" className="text-xs text-gray-600 hover:text-red-500 tracking-widest uppercase transition">← Volver</a>
       </div>
@@ -160,7 +147,7 @@ export default function ReservarPage() {
             <div className="grid grid-cols-4 gap-2">
               {HORARIOS.map((hora) => {
                 const disp = disponiblesEnHora(hora)
-                const pasado = !horaValida(hora, fecha)
+                const pasado = !horaValida(hora, fecha, UMBRAL)
                 const lleno = disp === 0 || pasado
                 const seleccionado = horaSeleccionada === hora
                 return (
@@ -184,25 +171,27 @@ export default function ReservarPage() {
           </div>
         )}
 
-        {/* Butacas */}
+        {/* Recursos */}
         {horaSeleccionada && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
-              <label className="block text-xs uppercase tracking-widest text-gray-500">Butacas</label>
-              {simusSeleccionados.length > 0 && (
-                <button onClick={() => setSimusSeleccionados([])} className="text-xs text-gray-600 hover:text-red-400 transition uppercase tracking-widest">
+              <label className="block text-xs uppercase tracking-widest text-gray-500">
+                {negocio.recursoNombre}s
+              </label>
+              {recursosSeleccionados.length > 0 && (
+                <button onClick={() => setRecursosSeleccionados([])} className="text-xs text-gray-600 hover:text-red-400 transition uppercase tracking-widest">
                   Limpiar
                 </button>
               )}
             </div>
             <div className="grid grid-cols-4 gap-3">
-              {SIMULADORES.map((id) => {
-                const ocupado = ocupadosEnHora.includes(id)
-                const seleccionado = simusSeleccionados.includes(id)
+              {RECURSOS.map((r) => {
+                const ocupado = ocupadosEnHora.includes(r.id)
+                const seleccionado = recursosSeleccionados.includes(r.id)
                 return (
                   <button
-                    key={id}
-                    onClick={() => toggleSim(id)}
+                    key={r.id}
+                    onClick={() => toggleRecurso(r.id)}
                     disabled={ocupado}
                     className={'rounded-2xl py-6 text-center transition border flex flex-col items-center gap-2 ' +
                       (ocupado ? 'border-white/5 text-gray-700 cursor-not-allowed ' : '') +
@@ -212,7 +201,7 @@ export default function ReservarPage() {
                     <span className={'text-2xl ' + (ocupado ? 'grayscale opacity-30' : '')}>🏎</span>
                     <span className={'text-xs font-bold tracking-widest uppercase ' +
                       (ocupado ? 'text-gray-700' : seleccionado ? 'text-red-400' : 'text-gray-400')}>
-                      Sim {id}
+                      {negocio.recursoNombre} {r.id}
                     </span>
                     <span className={'text-xs ' + (ocupado ? 'text-gray-700' : seleccionado ? 'text-red-500/50' : 'text-gray-600')}>
                       {ocupado ? 'ocupado' : seleccionado ? 'elegido' : 'libre'}
@@ -225,34 +214,22 @@ export default function ReservarPage() {
         )}
 
         {/* Datos */}
-        {simusSeleccionados.length > 0 && (
+        {recursosSeleccionados.length > 0 && (
           <div className="mb-8 border border-white/10 rounded-xl p-6">
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Tus datos</p>
             <div className="mb-4">
               <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Nombre</label>
-              <input
-                type="text"
-                className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-red-500 outline-none text-sm"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="Juan Perez"
-              />
+              <input type="text" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-red-500 outline-none text-sm" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan Perez" />
             </div>
             <div>
               <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Telefono</label>
-              <input
-                type="tel"
-                className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-red-500 outline-none text-sm"
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="11 1234-5678"
-              />
+              <input type="tel" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-red-500 outline-none text-sm" value={telefono} onChange={(e) => setTelefono(e.target.value.replace(/[^0-9]/g, ''))} placeholder="11 1234-5678" />
             </div>
           </div>
         )}
 
         {/* Confirmar */}
-        {nombre && telefono && simusSeleccionados.length > 0 && (
+        {nombre && telefono && recursosSeleccionados.length > 0 && (
           <button
             onClick={confirmarReserva}
             disabled={cargando}
@@ -260,7 +237,7 @@ export default function ReservarPage() {
           >
             {cargando
               ? 'Guardando...'
-              : `Confirmar · ${horaSeleccionada} · ${simusSeleccionados.length === 1 ? 'Sim ' + simusSeleccionados[0] : simusSeleccionados.length + ' simuladores'}`}
+              : `Confirmar · ${horaSeleccionada} · ${recursosSeleccionados.length === 1 ? negocio.recursoNombre + ' ' + recursosSeleccionados[0] : recursosSeleccionados.length + ' ' + negocio.recursoNombre.toLowerCase() + 's'}`}
           </button>
         )}
       </div>

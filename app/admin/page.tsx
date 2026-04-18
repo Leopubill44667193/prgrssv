@@ -3,13 +3,11 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { negocio } from '@/config'
+import { generarHorarios } from '@/lib/config'
 
-const HORARIOS = [
-  '15:00', '16:00', '17:00', '18:00', '19:00',
-  '20:00', '21:00', '22:00', '23:00', '00:00', '01:00'
-]
-const SIMU_IDS = [1, 2, 3, 4]
-const PASSWORD = 'racing2025'
+const HORARIOS = generarHorarios(negocio.horario.inicio, negocio.horario.fin)
+const RECURSOS = negocio.recursos
 
 function hoy() {
   return new Date().toISOString().slice(0, 10)
@@ -85,7 +83,7 @@ export default function Admin() {
   }
 
   function login() {
-    if (inputPass === PASSWORD) {
+    if (inputPass === negocio.adminPassword) {
       sessionStorage.setItem('admin_ok', '1')
       setAutenticado(true)
     } else {
@@ -154,18 +152,8 @@ export default function Admin() {
               />
             )}
             <div className="flex border border-white/10 rounded-xl overflow-hidden text-xs">
-              <button
-                onClick={() => setVista('grilla')}
-                className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'grilla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}
-              >
-                Grilla
-              </button>
-              <button
-                onClick={() => setVista('tabla')}
-                className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'tabla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}
-              >
-                Tabla
-              </button>
+              <button onClick={() => setVista('grilla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'grilla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Grilla</button>
+              <button onClick={() => setVista('tabla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'tabla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Tabla</button>
             </div>
             <button
               onClick={() => { sessionStorage.removeItem('admin_ok'); setAutenticado(false) }}
@@ -176,21 +164,16 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Banner / control de bloqueo */}
+        {/* Control de bloqueo */}
         {!todasFechas && (
           <div className="mb-6">
             {diaBloqueado ? (
               <div className="flex items-center justify-between bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-5 py-3">
                 <div>
                   <span className="text-yellow-400 font-bold text-sm uppercase tracking-widest">Día bloqueado</span>
-                  {diaBloqueado.motivo && (
-                    <span className="text-yellow-600 text-sm ml-3">· {diaBloqueado.motivo}</span>
-                  )}
+                  {diaBloqueado.motivo && <span className="text-yellow-600 text-sm ml-3">· {diaBloqueado.motivo}</span>}
                 </div>
-                <button
-                  onClick={desbloquearDia}
-                  className="text-xs uppercase tracking-widest text-yellow-600 hover:text-yellow-400 transition"
-                >
+                <button onClick={desbloquearDia} className="text-xs uppercase tracking-widest text-yellow-600 hover:text-yellow-400 transition">
                   Desbloquear
                 </button>
               </div>
@@ -201,22 +184,12 @@ export default function Admin() {
                   value={motivoInput}
                   onChange={e => setMotivoInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && bloquearDia()}
-                  placeholder="Motivo (opcional)"
+                  placeholder="Motivo (opcional: Feriado, Mantenimiento...)"
                   className="flex-1 bg-transparent text-white text-sm outline-none placeholder-gray-700"
                   autoFocus
                 />
-                <button
-                  onClick={bloquearDia}
-                  className="text-xs uppercase tracking-widest text-yellow-400 hover:text-yellow-300 font-bold transition"
-                >
-                  Confirmar
-                </button>
-                <button
-                  onClick={() => { setMostrandoFormBloqueo(false); setMotivoInput('') }}
-                  className="text-xs uppercase tracking-widest text-gray-600 hover:text-gray-400 transition"
-                >
-                  Cancelar
-                </button>
+                <button onClick={bloquearDia} className="text-xs uppercase tracking-widest text-yellow-400 hover:text-yellow-300 font-bold transition">Confirmar</button>
+                <button onClick={() => { setMostrandoFormBloqueo(false); setMotivoInput('') }} className="text-xs uppercase tracking-widest text-gray-600 hover:text-gray-400 transition">Cancelar</button>
               </div>
             ) : (
               <button
@@ -239,9 +212,9 @@ export default function Admin() {
               <thead>
                 <tr>
                   <th className="p-3 text-left text-xs uppercase tracking-widest text-gray-600 w-20">Hora</th>
-                  {SIMU_IDS.map((id) => (
-                    <th key={id} className="p-3 text-center text-xs uppercase tracking-widest text-gray-600">
-                      Sim {id}
+                  {RECURSOS.map((r) => (
+                    <th key={r.id} className="p-3 text-center text-xs uppercase tracking-widest text-gray-600">
+                      {negocio.recursoNombre} {r.id}
                     </th>
                   ))}
                 </tr>
@@ -250,14 +223,12 @@ export default function Admin() {
                 {HORARIOS.map((hora) => (
                   <tr key={hora} className="border-t border-white/5">
                     <td className="p-3 text-gray-600 text-xs font-mono">{hora}</td>
-                    {SIMU_IDS.map((simId) => {
-                      const turno = grillaMap[hora]?.[simId]
+                    {RECURSOS.map((r) => {
+                      const turno = grillaMap[hora]?.[r.id]
                       return (
-                        <td key={simId} className="p-2">
+                        <td key={r.id} className="p-2">
                           {diaBloqueado ? (
-                            <div className="rounded-lg p-2 text-center border border-yellow-500/10 text-yellow-900 text-xs">
-                              bloq.
-                            </div>
+                            <div className="rounded-lg p-2 text-center border border-yellow-500/10 text-yellow-900 text-xs">bloq.</div>
                           ) : turno ? (
                             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center group relative">
                               <p className="text-xs font-bold text-red-400 truncate">{turno.clientes?.nombre}</p>
@@ -265,14 +236,10 @@ export default function Admin() {
                               <button
                                 onClick={() => handleDelete(turno.id)}
                                 className="absolute top-1 right-1 text-red-700 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition"
-                              >
-                                ✕
-                              </button>
+                              >✕</button>
                             </div>
                           ) : (
-                            <div className="rounded-lg p-2 text-center border border-white/5 text-gray-800 text-xs">
-                              libre
-                            </div>
+                            <div className="rounded-lg p-2 text-center border border-white/5 text-gray-800 text-xs">libre</div>
                           )}
                         </td>
                       )
@@ -288,7 +255,7 @@ export default function Admin() {
               <thead>
                 <tr className="border-b border-white/10">
                   {todasFechas && <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Fecha</th>}
-                  <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Simulador</th>
+                  <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">{negocio.recursoNombre}</th>
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Cliente</th>
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Telefono</th>
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Horario</th>
@@ -308,9 +275,7 @@ export default function Admin() {
                       {(() => { const d = new Date(t.created_at); d.setHours(d.getHours() - 3); return d.toLocaleString('es-AR', { hour12: false }) })()}
                     </td>
                     <td className="p-4">
-                      <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:text-red-400 text-xs uppercase tracking-widest transition">
-                        Eliminar
-                      </button>
+                      <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:text-red-400 text-xs uppercase tracking-widest transition">Eliminar</button>
                     </td>
                   </tr>
                 ))}
