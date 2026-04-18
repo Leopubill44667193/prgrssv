@@ -1,47 +1,74 @@
 export type NegocioConfig = {
   id: string
-  nombre: string           // "OC.Hobbies.Racing"
-  direccion: string        // "Av. 3 de Febrero 283 · Rojas"
+  nombre: string              // "OC.Hobbies.Racing"
+  direccion: string           // "Av. 3 de Febrero 283 · Rojas"
   horario: {
-    inicio: number         // hora en 24h, ej: 15
-    fin: number            // puede superar 24 si cruza medianoche, ej: 26 = 02:00
+    inicioMin: number         // minutos desde medianoche, ej: 15*60=900
+    finMin: number            // minutos de cierre, ej: 19*60+30=1170 | 26*60=1560 (02:00 del día siguiente)
+    intervaloMinutos: number  // 30 o 60
   }
+  diasHabiles?: number[]      // 0=Dom, 1=Lun ... 6=Sáb. undefined = todos los días
   recursos: { id: number; nombre: string }[]
-  recursoNombre: string    // singular: "Simulador", "Cancha", "Máquina"
+  recursoNombre: string       // "Simulador", "Cancha", "Peluquero"
   duracionMinutos: number
   adminPassword: string
 }
 
 /** Genera el array de horarios a partir del rango del negocio.
- *  ej: inicio=15, fin=26 → ['15:00', ..., '23:00', '00:00', '01:00'] */
-export function generarHorarios(inicio: number, fin: number): string[] {
+ *  ej: inicioMin=540, finMin=1170, intervalo=30 → ['09:00', '09:30', ..., '19:00'] */
+export function generarHorarios(inicioMin: number, finMin: number, intervaloMinutos: number): string[] {
   const horarios: string[] = []
-  for (let h = inicio; h < fin; h++) {
-    horarios.push(String(h % 24).padStart(2, '0') + ':00')
+  for (let m = inicioMin; m < finMin; m += intervaloMinutos) {
+    horarios.push(formatHora(m))
   }
   return horarios
 }
 
-/** Formatea una hora numérica como string.
- *  ej: 15 → "15:00", 26 → "02:00" */
-export function formatHora(h: number): string {
-  return String(h % 24).padStart(2, '0') + ':00'
+/** Formatea minutos desde medianoche como string HH:MM.
+ *  ej: 900 → "15:00", 1560 → "02:00", 1170 → "19:30" */
+export function formatHora(minutos: number): string {
+  const total = minutos % (24 * 60)
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')
 }
 
-/** Umbral para la lógica de horas post-medianoche.
- *  Si fin > 24, hay horas que cruzan la medianoche (ej: 00:00, 01:00).
- *  El umbral es cuántas horas se pasan de las 00:00 + 1. */
-export function calcularUmbral(fin: number): number {
-  return fin > 24 ? fin - 24 + 1 : 0
+/** Texto legible de los días hábiles. */
+export function formatDiasHabiles(dias?: number[]): string {
+  if (!dias || dias.length === 7) return 'Todos los días'
+  const clave = dias.join(',')
+  if (clave === '1,2,3,4,5') return 'Lunes a Viernes'
+  if (clave === '1,2,3,4,5,6') return 'Lunes a Sábado'
+  const nombres = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  return dias.map(d => nombres[d]).join(', ')
 }
 
-/** Determina si un slot de hora es válido para reservar en la fecha dada.
- *  Bloquea horarios ya pasados del día actual, respetando el cruce de medianoche. */
+/** Umbral en minutos para detectar si estamos en horas post-medianoche.
+ *  Solo aplica cuando el negocio cierra pasada la medianoche. */
+export function calcularUmbral(finMin: number): number {
+  if (finMin <= 24 * 60) return 0
+  return Math.floor((finMin - 24 * 60) / 60) + 1  // en horas, para horaValida
+}
+
+/** Determina si un slot horario es válido para reservar en la fecha dada.
+ *  Bloquea slots ya pasados del día actual, con soporte de 30 min y cruce de medianoche. */
 export function horaValida(hora: string, fecha: string, umbral: number): boolean {
   if (fecha !== new Date().toLocaleDateString('en-CA')) return true
-  const horaActual = new Date().getHours()
-  const h = parseInt(hora)
-  if (umbral === 0) return h > horaActual
-  if (horaActual < umbral) return h >= umbral || h > horaActual
-  return h < umbral || h > horaActual
+  const ahora = new Date()
+  const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes()
+  const [h, m] = hora.split(':').map(Number)
+  const minutosSlot = h * 60 + m
+
+  if (umbral === 0) return minutosSlot > minutosActuales
+
+  const umbralMin = umbral * 60
+  if (minutosActuales < umbralMin) return minutosSlot >= umbralMin || minutosSlot > minutosActuales
+  return minutosSlot < umbralMin || minutosSlot > minutosActuales
+}
+
+/** Verifica si una fecha cae en un día hábil del negocio. */
+export function esDiaHabil(fecha: string, diasHabiles?: number[]): boolean {
+  if (!diasHabiles || diasHabiles.length === 0) return true
+  const dia = new Date(fecha + 'T12:00:00').getDay()
+  return diasHabiles.includes(dia)
 }

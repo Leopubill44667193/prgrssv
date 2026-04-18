@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { negocio, } from '@/config'
-import { formatHora } from '@/lib/config'
+import { negocio } from '@/config'
+import { formatHora, formatDiasHabiles } from '@/lib/config'
 
 export default function Home() {
-  const horaInicio = formatHora(negocio.horario.inicio)
-  const horaFin = formatHora(negocio.horario.fin)
+  const horaInicio = formatHora(negocio.horario.inicioMin)
+  const horaFin = formatHora(negocio.horario.finMin)
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
@@ -20,7 +20,7 @@ export default function Home() {
         </div>
         <div className="text-xs text-gray-600 tracking-widest uppercase text-right">
           <div>{horaInicio} - {horaFin}</div>
-          <div>Todos los dias</div>
+          <div>{formatDiasHabiles(negocio.diasHabiles)}</div>
         </div>
       </div>
 

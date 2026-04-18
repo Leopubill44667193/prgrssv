@@ -4,7 +4,12 @@ const config: NegocioConfig = {
   id: 'sim-turnos',
   nombre: 'OC.Hobbies.Racing',
   direccion: 'Av. 3 de Febrero 283 · Rojas',
-  horario: { inicio: 15, fin: 26 },  // 15:00 a 02:00 (26 = 24 + 2)
+  horario: {
+    inicioMin: 15 * 60,       // 15:00
+    finMin: 26 * 60,          // 02:00 del día siguiente
+    intervaloMinutos: 60,
+  },
+  // diasHabiles no definido = todos los días
   recursos: [
     { id: 1, nombre: 'Simulador 1' },
     { id: 2, nombre: 'Simulador 2' },
