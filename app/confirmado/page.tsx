@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { negocio } from '@/config'
 
 function Confirmado() {
   const searchParams = useSearchParams()
@@ -17,7 +18,7 @@ function Confirmado() {
     : ''
 
   const waTexto = encodeURIComponent(
-    `Reserva OC.Hobbies.Racing\n📅 ${fechaFormateada}\n⏰ ${horas.length > 1 ? horas.join(", ") : hora} hs\n🏎 Simulador${simus.length > 1 ? 'es' : ''} ${simus.join(', ')}\n\nLinks de cancelación:\n` +
+    `Reserva ${negocio.nombre}\n📅 ${fechaFormateada}\n⏰ ${horas.length > 1 ? horas.join(", ") : hora} hs\n🏎 Simulador${simus.length > 1 ? 'es' : ''} ${simus.join(', ')}\n\nLinks de cancelación:\n` +
     tokens.map((t, i) => `Sim ${simus[i] ?? i + 1}: ${origin}/cancelar/${t}`).join('\n')
   )
 
@@ -28,7 +29,7 @@ function Confirmado() {
         <h1 className="text-4xl font-black uppercase mb-2">
           {tokens.length === 1 ? 'Turno confirmado' : 'Turnos confirmados'}
         </h1>
-        <p className="text-red-500 text-xs tracking-widest uppercase">OC.Hobbies.Racing · Av. 3 de Febrero 283</p>
+        <p className="text-red-500 text-xs tracking-widest uppercase">{negocio.nombre} · {negocio.direccion}</p>
       </div>
 
       {/* Resumen */}
