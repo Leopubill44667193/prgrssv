@@ -1,19 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-async function enviarWhatsApp(phone: string, apikey: string, mensaje: string) {
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${encodeURIComponent(mensaje)}&apikey=${apikey}`
-  const res = await fetch(url)
+async function enviarWhatsApp(to: string, mensaje: string, sid: string, token: string, from: string) {
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`
+  const body = new URLSearchParams({ To: to, From: from, Body: mensaje })
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  })
+  const json = await res.json()
+  console.log('Twilio response:', JSON.stringify(json))
   return res.ok
 }
 
 export async function POST(req: NextRequest) {
-  const phone1 = process.env.CALLMEBOT_PHONE
-  const apikey1 = process.env.CALLMEBOT_APIKEY
-  const phone2 = process.env.CALLMEBOT_PHONE_2
-  const apikey2 = process.env.CALLMEBOT_APIKEY_2
+  const sid = process.env.TWILIO_ACCOUNT_SID
+  const token = process.env.TWILIO_AUTH_TOKEN
+  const from = process.env.TWILIO_FROM
+  const to1 = process.env.TWILIO_TO_1
+  const to2 = process.env.TWILIO_TO_2
 
-  if (!phone1 || !apikey1) {
-    return NextResponse.json({ error: 'CallMeBot no configurado' }, { status: 500 })
+  if (!sid || !token || !from || !to1) {
+    return NextResponse.json({ error: 'Twilio no configurado' }, { status: 500 })
   }
 
   const { mensaje } = await req.json()
@@ -22,8 +33,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const promesas = [enviarWhatsApp(phone1, apikey1, mensaje)]
-    if (phone2 && apikey2) promesas.push(enviarWhatsApp(phone2, apikey2, mensaje))
+    const promesas = [enviarWhatsApp(to1, mensaje, sid, token, from)]
+    if (to2) promesas.push(enviarWhatsApp(to2, mensaje, sid, token, from))
     await Promise.all(promesas)
     return NextResponse.json({ ok: true })
   } catch (e) {
