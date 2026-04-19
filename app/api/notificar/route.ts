@@ -11,8 +11,6 @@ async function enviarWhatsApp(to: string, mensaje: string, sid: string, token: s
     },
     body: body.toString(),
   })
-  const json = await res.json()
-  console.log('Twilio response:', JSON.stringify(json))
   return res.ok
 }
 
