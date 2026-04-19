@@ -17,6 +17,7 @@ const config: NegocioConfig = {
     { id: 4, nombre: 'Simulador 4' },
   ],
   recursoNombre: 'Simulador',
+  recursoNombrePlural: 'Simuladores',
   duracionMinutos: 60,
   adminPassword: 'racing2025',
 }

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { negocio } from '@/config'
 import { generarHorarios } from '@/lib/config'
 
-const HORARIOS = generarHorarios(negocio.horario.inicio, negocio.horario.fin)
+const HORARIOS = generarHorarios(negocio.horario.inicioMin, negocio.horario.finMin, negocio.horario.intervaloMinutos)
 const RECURSOS = negocio.recursos
 
 function hoy() {
@@ -138,23 +138,25 @@ export default function Admin() {
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <button
-              onClick={() => setTodasFechas(!todasFechas)}
+              onClick={() => { const next = !todasFechas; setTodasFechas(next); if (next) setVista('tabla') }}
               className={'px-4 py-2 rounded-xl text-xs uppercase tracking-widest transition border ' + (todasFechas ? 'bg-red-500 border-red-500 text-white' : 'border-white/10 text-gray-500 hover:text-white')}
             >
-              Todas
+              Todos
             </button>
             {!todasFechas && (
-              <input
-                type="date"
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none text-sm focus:border-red-500"
-              />
+              <>
+                <input
+                  type="date"
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
+                  className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none text-sm focus:border-red-500"
+                />
+                <div className="flex border border-white/10 rounded-xl overflow-hidden text-xs">
+                  <button onClick={() => setVista('grilla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'grilla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Grilla</button>
+                  <button onClick={() => setVista('tabla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'tabla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Tabla</button>
+                </div>
+              </>
             )}
-            <div className="flex border border-white/10 rounded-xl overflow-hidden text-xs">
-              <button onClick={() => setVista('grilla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'grilla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Grilla</button>
-              <button onClick={() => setVista('tabla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'tabla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Tabla</button>
-            </div>
             <button
               onClick={() => { sessionStorage.removeItem('admin_ok'); setAutenticado(false) }}
               className="text-xs text-gray-600 hover:text-red-500 uppercase tracking-widest transition"

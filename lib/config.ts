@@ -10,6 +10,7 @@ export type NegocioConfig = {
   diasHabiles?: number[]      // 0=Dom, 1=Lun ... 6=Sáb. undefined = todos los días
   recursos: { id: number; nombre: string }[]
   recursoNombre: string       // "Simulador", "Cancha", "Peluquero"
+  recursoNombrePlural: string // "Simuladores", "Canchas", "Peluqueros"
   duracionMinutos: number
   adminPassword: string
 }

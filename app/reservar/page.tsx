@@ -102,7 +102,7 @@ export default function ReservarPage() {
     const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
     const recursoTexto = recursos.length === 1
       ? `${negocio.recursoNombre} ${recursos[0]}`
-      : `${negocio.recursoNombre}s ${recursos.join(', ')}`
+      : `${negocio.recursoNombrePlural} ${recursos.join(', ')}`
     const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${hora} hs\n🏎 ${recursoTexto}\n👤 ${nombre}\n📱 ${telefono}`
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
@@ -191,7 +191,7 @@ export default function ReservarPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
               <label className="block text-xs uppercase tracking-widest text-gray-500">
-                {negocio.recursoNombre}s
+                {negocio.recursoNombrePlural}
               </label>
               {recursosSeleccionados.length > 0 && (
                 <button onClick={() => setRecursosSeleccionados([])} className="text-xs text-gray-600 hover:text-red-400 transition uppercase tracking-widest">
@@ -252,7 +252,7 @@ export default function ReservarPage() {
           >
             {cargando
               ? 'Guardando...'
-              : `Confirmar · ${horaSeleccionada} · ${recursosSeleccionados.length === 1 ? negocio.recursoNombre + ' ' + recursosSeleccionados[0] : recursosSeleccionados.length + ' ' + negocio.recursoNombre.toLowerCase() + 's'}`}
+              : `Confirmar · ${horaSeleccionada} · ${recursosSeleccionados.length === 1 ? negocio.recursoNombre + ' ' + recursosSeleccionados[0] : recursosSeleccionados.length + ' ' + negocio.recursoNombrePlural.toLowerCase()}`}
           </button>
         )}
       </div>

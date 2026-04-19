@@ -14,6 +14,7 @@ const config: NegocioConfig = {
     { id: 1, nombre: 'Eugenio Dorrigo' },
   ],
   recursoNombre: 'Peluquero',
+  recursoNombrePlural: 'Peluqueros',
   duracionMinutos: 30,
   adminPassword: 'progressevi',
 }
