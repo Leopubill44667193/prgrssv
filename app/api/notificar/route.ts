@@ -11,6 +11,10 @@ async function enviarWhatsApp(to: string, mensaje: string, sid: string, token: s
     },
     body: body.toString(),
   })
+  if (!res.ok) {
+    const data = await res.json()
+    console.error('Twilio error', to, data)
+  }
   return res.ok
 }
 
