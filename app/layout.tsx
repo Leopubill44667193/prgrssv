@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     siteName: negocio.nombre,
     locale: "es_AR",
     type: "website",
+    images: [{ url: '/og-image.jpg', width: 1024, height: 1024 }],
   },
 };
 
