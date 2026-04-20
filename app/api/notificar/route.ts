@@ -24,6 +24,8 @@ export async function POST(req: NextRequest) {
   const from = process.env.TWILIO_FROM
   const to1 = process.env.TWILIO_TO_1
   const to2 = process.env.TWILIO_TO_2
+  const to3 = process.env.TWILIO_TO_3
+  const to4 = process.env.TWILIO_TO_4
 
   if (!sid || !token || !from || !to1) {
     return NextResponse.json({ error: 'Twilio no configurado' }, { status: 500 })
@@ -37,6 +39,8 @@ export async function POST(req: NextRequest) {
   try {
     const promesas = [enviarWhatsApp(to1, mensaje, sid, token, from)]
     if (to2) promesas.push(enviarWhatsApp(to2, mensaje, sid, token, from))
+    if (to3) promesas.push(enviarWhatsApp(to3, mensaje, sid, token, from))
+    if (to4) promesas.push(enviarWhatsApp(to4, mensaje, sid, token, from))
     await Promise.all(promesas)
     return NextResponse.json({ ok: true })
   } catch (e) {

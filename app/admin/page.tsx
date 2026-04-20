@@ -25,6 +25,7 @@ export default function Admin() {
   const [diaBloqueado, setDiaBloqueado] = useState<{ motivo: string } | null>(null)
   const [mostrandoFormBloqueo, setMostrandoFormBloqueo] = useState(false)
   const [motivoInput, setMotivoInput] = useState('')
+  const [horariosBloqueados, setHorariosBloqueados] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_ok') === '1') setAutenticado(true)
@@ -33,8 +34,8 @@ export default function Admin() {
   useEffect(() => {
     if (!autenticado) return
     fetchTurnos()
-    if (!todasFechas) fetchBloqueo()
-    else setDiaBloqueado(null)
+    if (!todasFechas) { fetchBloqueo(); fetchHorariosBloqueados() }
+    else { setDiaBloqueado(null); setHorariosBloqueados(new Set()) }
   }, [autenticado, fecha, todasFechas])
 
   const fetchTurnos = async () => {
@@ -47,6 +48,21 @@ export default function Admin() {
     const { data, error } = await query
     if (!error && data) setTurnos(data)
     setLoading(false)
+  }
+
+  const fetchHorariosBloqueados = async () => {
+    const { data } = await supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha)
+    setHorariosBloqueados(new Set((data ?? []).map((d) => d.hora.slice(0, 5))))
+  }
+
+  const toggleHorario = async (hora: string) => {
+    if (horariosBloqueados.has(hora)) {
+      await supabase.from('horarios_bloqueados').delete().eq('fecha', fecha).eq('hora', hora)
+      setHorariosBloqueados((prev) => { const s = new Set(prev); s.delete(hora); return s })
+    } else {
+      await supabase.from('horarios_bloqueados').insert({ fecha, hora })
+      setHorariosBloqueados((prev) => new Set([...prev, hora]))
+    }
   }
 
   const fetchBloqueo = async () => {
@@ -240,8 +256,14 @@ export default function Admin() {
                                 className="absolute top-1 right-1 text-red-700 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition"
                               >✕</button>
                             </div>
+                          ) : horariosBloqueados.has(hora) ? (
+                            <button onClick={() => toggleHorario(hora)} className="w-full rounded-lg p-2 text-center border border-orange-500/20 text-orange-800 text-xs hover:border-orange-500/40 transition">
+                              bloq. ✕
+                            </button>
                           ) : (
-                            <div className="rounded-lg p-2 text-center border border-white/5 text-gray-800 text-xs">libre</div>
+                            <button onClick={() => toggleHorario(hora)} className="w-full rounded-lg p-2 text-center border border-white/5 text-gray-800 text-xs hover:border-white/20 hover:text-gray-600 transition">
+                              libre
+                            </button>
                           )}
                         </td>
                       )

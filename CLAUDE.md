@@ -1,3 +1,9 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
 # sim-turnos — Sistema multi-negocio de reservas
 
 Sistema de reservas online configurable por negocio. Cada cliente tiene su propio archivo de config, una instancia de Supabase, y un deployment en Vercel con su env var `NEXT_PUBLIC_NEGOCIO_ID`.
@@ -26,35 +32,24 @@ Sistema de reservas online configurable por negocio. Cada cliente tiene su propi
 
 ---
 
-## Estructura de archivos
+## Comandos
 
+```bash
+# Desarrollo (desde WSL)
+cd /home/usuario/proyectos/sim-turnos
+npm run dev
+
+# Limpiar cache y reiniciar
+rm -rf .next && npm run dev
+
+# Lint
+npm run lint
+
+# Push a produccion
+git add -p && git commit -m "..." && git push origin main
 ```
-app/
-  page.tsx                    # Landing
-  layout.tsx                  # Root layout + metadata dinamica desde config
-  globals.css
-  reservar/
-    page.tsx                  # Flujo principal: fecha + hora + recursos + datos
-    [id]/page.tsx             # Flujo alternativo: un recurso especifico, multi-hora
-  confirmado/
-    page.tsx                  # Resumen post-reserva + links de cancelacion
-  cancelar/
-    page.tsx                  # Redirige a /mis-turnos
-    [token]/page.tsx          # Cancelacion self-service por token
-  mis-turnos/
-    page.tsx                  # Busqueda de turnos por telefono
-  admin/
-    page.tsx                  # Panel interno con grilla/tabla + bloqueo de dias
-  api/
-    notificar/route.ts        # POST server-side -> Twilio WhatsApp (hasta 2 numeros)
-config/
-  index.ts                    # Selecciona config activa por NEXT_PUBLIC_NEGOCIO_ID
-  sim-turnos.ts               # Config de OC.Hobbies.Racing
-  prgrssv.ts                  # Config de Prgrssv
-lib/
-  config.ts                   # Tipo NegocioConfig + helpers (generarHorarios, horaValida, etc.)
-  supabase.js                 # Cliente Supabase (anon key)
-```
+
+No hay tests configurados. Los errores de TypeScript y ESLint no bloquean el build (`next.config.ts` tiene `ignoreBuildErrors: true` y `ignoreDuringBuilds: true`).
 
 ---
 
@@ -79,8 +74,6 @@ lib/
 | fecha | date PK | |
 | motivo | text | nullable (ej: "Feriado", "Mantenimiento") |
 
-RLS deshabilitado (misma anon key que el resto).
-
 ### `turnos`
 | campo | tipo | notas |
 |-------|------|-------|
@@ -94,6 +87,8 @@ RLS deshabilitado (misma anon key que el resto).
 | created_at | timestamptz | |
 
 **Constraint:** `UNIQUE (simulador_id, fecha, hora_inicio)` — evita doble reserva del mismo slot.
+
+RLS deshabilitado (misma anon key que el resto).
 
 ---
 
@@ -109,45 +104,7 @@ RLS deshabilitado (misma anon key que el resto).
 | `/cancelar` | Redirige a /mis-turnos |
 | `/mis-turnos` | Buscar turnos propios por telefono |
 | `/admin` | Panel con login por contrasena, grilla y tabla por fecha |
-
----
-
-## Lo que esta funcionando
-
-- [x] Landing page con metadata dinamica
-- [x] Flujo de reserva grupal (`/reservar`): fecha, hora y multiples recursos en un paso
-- [x] Flujo de reserva individual (`/reservar/[id]`): un recurso, hasta 4 horas
-- [x] Deduplicacion de clientes por telefono
-- [x] Pagina de confirmacion con resumen completo
-- [x] Links de cancelacion individuales por recurso (uno por turno)
-- [x] Boton Compartir por WhatsApp con todos los datos de la reserva
-- [x] Cancelacion self-service por token unico sin login
-- [x] Notificacion WhatsApp al confirmar una reserva (hasta 2 numeros via Twilio)
-- [x] Notificacion WhatsApp al cancelar un turno (hasta 2 numeros via Twilio)
-- [x] Panel admin: login por contrasena, vista grilla y vista tabla
-- [x] Eliminar turno desde el admin
-- [x] Selector de fecha en el admin + vista "Todos" (todos los turnos)
-- [x] Bloqueo de dias desde el admin con motivo opcional
-- [x] Validacion de fecha minima (no se pueden reservar fechas pasadas)
-- [x] Bloqueo de horarios pasados dentro del dia actual
-- [x] Constraint UNIQUE en Supabase sobre (simulador_id, fecha, hora_inicio)
-- [x] Sistema multi-negocio: config por archivo + env var NEXT_PUBLIC_NEGOCIO_ID
-- [x] Soporte de intervalos de 30 y 60 minutos
-- [x] Dias habiles configurables por negocio
-- [x] `/mis-turnos`: buscar y cancelar turnos propios por telefono
-- [x] Metadata del sitio dinamica desde config del negocio
-
----
-
-## Lo que falta / deuda tecnica
-
-- [ ] **Auth admin real** — la contrasena esta en el bundle del cliente (visible en JS)
-- [ ] **RLS en Supabase** — la anon key tiene acceso total a todas las tablas
-- [ ] **Limite por cliente** — un mismo telefono puede reservar todos los recursos
-- [ ] **Timezone explicita** — `created_at` en admin resta 3 hs hardcodeado (UTC-3)
-- [ ] **Pagina 404 personalizada**
-- [ ] **Base de datos compartida** — hoy cada negocio necesita su propia instancia de Supabase (limite 2 gratis). Antes del cliente 3 conviene migrar a una BD unica con columna negocio_id
-- [ ] **Twilio produccion** — hoy usa sandbox (requiere join previo). Para clientes reales hay que aprobar WhatsApp Business Account en Twilio
+| `/api/notificar` | POST server-side -> Twilio WhatsApp (hasta 2 numeros) |
 
 ---
 
@@ -156,11 +113,19 @@ RLS deshabilitado (misma anon key que el resto).
 ### Multi-negocio
 Cada negocio tiene un archivo en `config/` con tipo `NegocioConfig`. La config activa se selecciona por `NEXT_PUBLIC_NEGOCIO_ID` (default: `sim-turnos`). Un solo repo, multiples deployments en Vercel.
 
-### NegocioConfig — campos clave
-- `horario.inicioMin` / `finMin` — minutos desde medianoche (ej: 15*60=900)
+### NegocioConfig — campos clave (`lib/config.ts`)
+- `horario.inicioMin` / `finMin` — minutos desde medianoche (ej: 15*60=900). Soporta cruce de medianoche (finMin < inicioMin).
 - `horario.intervaloMinutos` — 30 o 60
-- `diasHabiles` — array de dias (0=Dom...6=Sab), undefined = todos los dias
-- `recursoNombre` / `recursoNombrePlural` — singular y plural del recurso
+- `diasHabiles` — array de dias (0=Dom...6=Sab), `undefined` = todos los dias
+- `recursoNombre` / `recursoNombrePlural` — singular y plural del recurso (ej: "Simulador"/"Simuladores")
+- `adminPassword` — contrasena en plaintext (deuda tecnica: visible en el bundle JS)
+
+### Helpers de horario (`lib/config.ts`)
+- `generarHorarios()` — crea array de slots desde apertura/cierre
+- `formatHora()` — convierte minutos desde medianoche a HH:MM, maneja horarios del dia siguiente
+- `horaValida()` — bloquea slots pasados en el dia actual, maneja cruce de medianoche
+- `esDiaHabil()` — verifica si la fecha cae en los dias habiles del negocio
+- `calcularUmbral()` — detecta si el horario cruza la medianoche
 
 ### Notificaciones server-side (Twilio)
 Las credenciales de Twilio viven en variables de entorno del servidor. La llamada se hace desde `app/api/notificar/route.ts` con `Promise.all` para enviar a los dos numeros en paralelo. Nunca se exponen al browser.
@@ -168,7 +133,7 @@ Las credenciales de Twilio viven en variables de entorno del servidor. La llamad
 Twilio sandbox: cada numero receptor debe mandar `join <palabra>` al +14155238886 una sola vez.
 
 ### cancel_token en lugar de auth
-Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login.
+Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login. Los links de cancelacion se muestran en `/confirmado` y se envian por WhatsApp.
 
 ### Deduplicacion de clientes por telefono
 Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si existe se reutiliza el id. La query usa `.single()` que devuelve 406 si no encuentra fila — esto es normal y el codigo lo maneja.
@@ -176,8 +141,8 @@ Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si
 ### Supabase client tolerante a build time
 `lib/supabase.js` usa fallback `|| placeholder` en las vars para evitar crash durante el prerender de Next.js en Vercel.
 
-### TypeScript con errores ignorados en build
-`next.config.ts` tiene `typescript: { ignoreBuildErrors: true }` y `eslint: { ignoreDuringBuilds: true }`.
+### Timezone
+`created_at` en el admin resta 3 hs hardcodeado (UTC-3). No hay manejo explicito de timezone.
 
 ---
 
@@ -210,19 +175,15 @@ TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # numero secundario (opcional)
 
 ---
 
-## Comandos
+## Deuda tecnica
 
-```bash
-# Desarrollo (desde WSL)
-cd /home/usuario/proyectos/sim-turnos
-npm run dev
-
-# Limpiar cache y reiniciar
-rm -rf .next && npm run dev
-
-# Push a produccion
-git add -p && git commit -m "..." && git push origin main
-```
+- **Auth admin real** — la contrasena esta en el bundle del cliente (visible en JS)
+- **RLS en Supabase** — la anon key tiene acceso total a todas las tablas
+- **Limite por cliente** — un mismo telefono puede reservar todos los recursos
+- **Timezone explicita** — `created_at` en admin resta 3 hs hardcodeado (UTC-3)
+- **Pagina 404 personalizada**
+- **Base de datos compartida** — hoy cada negocio necesita su propia instancia de Supabase (limite 2 gratis). Antes del cliente 3 conviene migrar a una BD unica con columna `negocio_id`
+- **Twilio produccion** — hoy usa sandbox (requiere join previo). Para clientes reales hay que aprobar WhatsApp Business Account en Twilio
 
 ---
 

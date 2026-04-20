@@ -24,6 +24,7 @@ export default function ReservarIdPage({ params }) {
   const [horasOcupadas, setHorasOcupadas] = useState([])
   const [fechaBloqueada, setFechaBloqueada] = useState(false)
   const [diaNoHabil, setDiaNoHabil] = useState(false)
+  const [horariosBloqueados, setHorariosBloqueados] = useState<string[]>([])
 
   useEffect(() => {
     params.then((p) => setSimuladorId(p.id))
@@ -38,11 +39,13 @@ export default function ReservarIdPage({ params }) {
         return
       }
       setDiaNoHabil(false)
-      const [{ data: turnosData }, { data: bloqueo }] = await Promise.all([
+      const [{ data: turnosData }, { data: bloqueo }, { data: horBloq }] = await Promise.all([
         supabase.from('turnos').select('hora_inicio').eq('simulador_id', Number(simuladorId)).eq('fecha', fecha),
         supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).single(),
+        supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha),
       ])
       setFechaBloqueada(!!bloqueo)
+      setHorariosBloqueados((horBloq ?? []).map((h) => h.hora.slice(0, 5)))
       if (turnosData) setHorasOcupadas(turnosData.map((t) => t.hora_inicio.slice(0, 5)))
     }
     fetchDatos()
@@ -144,7 +147,7 @@ export default function ReservarIdPage({ params }) {
             </div>
             <div className="grid grid-cols-4 gap-2">
               {HORARIOS.map((hora) => {
-                const ocupado = horasOcupadas.includes(hora) || !horaValida(hora, fecha, UMBRAL)
+                const ocupado = horasOcupadas.includes(hora) || !horaValida(hora, fecha, UMBRAL) || horariosBloqueados.includes(hora)
                 const seleccionado = horasSeleccionadas.includes(hora)
                 const lleno = !seleccionado && horasSeleccionadas.length >= 4
                 return (

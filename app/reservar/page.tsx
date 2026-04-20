@@ -25,6 +25,7 @@ export default function ReservarPage() {
   const [ocupadosPorHora, setOcupadosPorHora] = useState<Record<string, number[]>>({})
   const [fechaBloqueada, setFechaBloqueada] = useState(false)
   const [diaNoHabil, setDiaNoHabil] = useState(false)
+  const [horariosBloqueados, setHorariosBloqueados] = useState<string[]>([])
 
   useEffect(() => {
     if (!fecha) return
@@ -35,11 +36,13 @@ export default function ReservarPage() {
         return
       }
       setDiaNoHabil(false)
-      const [{ data: turnosData }, { data: bloqueo }] = await Promise.all([
+      const [{ data: turnosData }, { data: bloqueo }, { data: horBloq }] = await Promise.all([
         supabase.from('turnos').select('hora_inicio, simulador_id').eq('fecha', fecha),
         supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).single(),
+        supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha),
       ])
       setFechaBloqueada(!!bloqueo)
+      setHorariosBloqueados((horBloq ?? []).map((h) => h.hora.slice(0, 5)))
       const mapa: Record<string, number[]> = {}
       for (const t of turnosData ?? []) {
         const h = t.hora_inicio.slice(0, 5)
@@ -163,7 +166,8 @@ export default function ReservarPage() {
               {HORARIOS.map((hora) => {
                 const disp = disponiblesEnHora(hora)
                 const pasado = !horaValida(hora, fecha, UMBRAL)
-                const lleno = disp === 0 || pasado
+                const bloqueado = horariosBloqueados.includes(hora)
+                const lleno = disp === 0 || pasado || bloqueado
                 const seleccionado = horaSeleccionada === hora
                 return (
                   <button
@@ -177,7 +181,7 @@ export default function ReservarPage() {
                   >
                     <span>{hora}</span>
                     <span className={'text-xs ' + (lleno ? 'text-gray-700' : seleccionado ? 'text-red-500/50' : 'text-gray-600')}>
-                      {pasado ? 'pasado' : lleno ? 'lleno' : disp + (disp === 1 ? ' libre' : ' libres')}
+                      {pasado ? 'pasado' : bloqueado ? 'no disp.' : lleno ? 'lleno' : disp + (disp === 1 ? ' libre' : ' libres')}
                     </span>
                   </button>
                 )
