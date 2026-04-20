@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # sim-turnos — Sistema multi-negocio de reservas
 
+**Estado:** En producción (sim-turnos.vercel.app)
+
 Sistema de reservas online configurable por negocio. Cada cliente tiene su propio archivo de config, una instancia de Supabase, y un deployment en Vercel con su env var `NEXT_PUBLIC_NEGOCIO_ID`.
 
 ---
@@ -136,7 +138,7 @@ Twilio sandbox: cada numero receptor debe mandar `join <palabra>` al +1415523888
 Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login. Los links de cancelacion se muestran en `/confirmado` y se envian por WhatsApp.
 
 ### Deduplicacion de clientes por telefono
-Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si existe se reutiliza el id. La query usa `.single()` que devuelve 406 si no encuentra fila — esto es normal y el codigo lo maneja.
+Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si existe se reutiliza el id **y se actualiza el nombre** con el valor ingresado en el formulario. La query usa `.single()` que devuelve 406 si no encuentra fila — esto es normal y el codigo lo maneja.
 
 ### Supabase client tolerante a build time
 `lib/supabase.js` usa fallback `|| placeholder` en las vars para evitar crash durante el prerender de Next.js en Vercel.
