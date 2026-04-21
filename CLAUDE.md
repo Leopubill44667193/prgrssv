@@ -38,15 +38,29 @@ Sistema de reservas online configurable por negocio. Un solo repo, una sola base
 ## Comandos
 
 ```bash
-npm run dev
-rm -rf .next && npm run dev  # si hay problemas de caché
+npm run dev:sim        # OC.Hobbies.Racing
+npm run dev:prgrssv    # Prgrssv peluquería
+npm run dev:lacancha   # La Cancha Padel
+
+rm -rf .next && npm run dev:sim  # si hay problemas de caché
 npm run lint
 git add -p && git commit -m "..." && git push origin main && git push prgrssv main
 ```
 
 El repo tiene dos remotes: `origin` (sim-turnos.vercel.app) y `prgrssv` (prgrssv.vercel.app). **Siempre pushear a ambos** para que los dos deployments de Vercel se actualicen.
 
+**No tocar `.env.local`** para cambiar el negocio — usar los scripts `dev:*` de arriba.
+
 No hay tests configurados y no se deben agregar salvo que se pida explícitamente.
+
+## Flujo de trabajo
+
+1. Crear rama: `git checkout -b feature/nombre`
+2. Hacer cambios y probar en local con `npm run dev:negocio`
+3. Pushear → Vercel genera URL preview automática para verificar
+4. Si todo bien: `git checkout main && git merge feature/nombre`
+5. Correr `bash scripts/check.sh` → tiene que dar 12/12
+6. Pushear: `git push origin main && git push prgrssv main`
 
 ---
 
@@ -67,6 +81,10 @@ No hay tests configurados y no se deben agregar salvo que se pida explícitament
 {
   id: string            // identificador único, debe coincidir con NEXT_PUBLIC_NEGOCIO_ID
   nombre: string        // nombre visible del negocio
+  nombreDisplay?: {
+    parte1: string      // se coloriza con --accent en el header
+    parte2?: string     // color normal, opcional. Incluir separadores (espacios, puntos) acá si se necesitan
+  }
   direccion: string     // dirección, se muestra en el header y footer
   horario: {
     inicioMin: number   // minutos desde medianoche. Ej: 9*60 = 540 (09:00)
@@ -81,14 +99,26 @@ No hay tests configurados y no se deben agregar salvo que se pida explícitament
   adminPassword: string       // contraseña del panel admin
   emoji: string               // emoji del recurso. Se usa en favicon, botones y mensajes WhatsApp
   seleccionSimple?: boolean   // true = solo se elige 1 recurso por turno. false/undefined = multi-select
-  bgColor?: string            // color de fondo CSS. Default: '#000000'
-  accentColor?: string        // color de acento. Default: 'red'
+  tema?: {
+    accent: string            // color de acento hex. Default: '#ef4444'
+    accentHover: string       // hover del acento hex. Default: '#dc2626'
+    bg: string                // color de fondo hex. Default: '#000000'
+  }
+  features?: {
+    multiRecurso?: boolean        // puede seleccionar múltiples recursos por turno
+    listaEspera?: boolean         // lista de espera (no implementado)
+    seniaObligatoria?: boolean    // seña obligatoria al reservar (no implementado)
+    recordatorio24hs?: boolean    // recordatorio 24hs antes (no implementado)
+    confirmacionCliente?: boolean // confirmación al cliente por WhatsApp (no implementado)
+  }
 }
 ```
 
-**Sobre el nombre del recurso:** se muestra tal cual en la UI, mensajes de WhatsApp y admin. Si un recurso tiene característica especial, incluirla en el nombre (ej: `'Cancha 5 (Blindex)'`).
+**Sobre `nombreDisplay`:** si no se define, el header hace fallback a `nombre.split('.')` — útil para nombres con puntos como `OC.Hobbies.Racing`. Para nombres sin puntos (ej: `La Cancha Padel`) definirlo siempre para evitar bugs visuales.
 
-**Sobre features nuevas:** asumir que pueden ser opt-in por negocio vía config. Si una feature tiene sentido solo para algunos negocios, agregar un campo al tipo y que cada config lo active o no.
+**Sobre `tema`:** los colores se inyectan como CSS variables `--accent`, `--accent-hover`, `--bg` en el layout. Todos los componentes los usan via `var(--accent)` etc.
+
+**Sobre el nombre del recurso:** se muestra tal cual en la UI, mensajes de WhatsApp y admin. Si un recurso tiene característica especial, incluirla en el nombre (ej: `'Cancha 5 (Blindex)'`).
 
 ---
 
@@ -175,8 +205,14 @@ RLS deshabilitado (misma anon key para todos).
 
 ## Decisiones técnicas importantes
 
+### TypeScript estricto
+`ignoreBuildErrors: false` en `next.config.ts`. El build falla si hay errores de tipos — Vercel no despliega código roto silenciosamente.
+
 ### Multi-negocio
 Cada negocio tiene un archivo en `config/` con tipo `NegocioConfig`. La config activa se selecciona por `NEXT_PUBLIC_NEGOCIO_ID` (default: `sim-turnos`). Un solo repo, múltiples deployments en Vercel, una sola BD Supabase.
+
+### Sistema de temas
+Los colores se definen en `config/<negocio>.ts` como `tema: { accent, accentHover, bg }` con hex directos. `app/layout.tsx` los inyecta como CSS variables `:root { --accent, --accent-hover, --bg }`. Sin `tema` definido usa rojo/negro como default.
 
 ### Helpers de horario (`lib/config.ts`)
 - `generarHorarios()` — crea array de slots desde apertura/cierre
