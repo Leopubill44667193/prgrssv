@@ -3,6 +3,7 @@ import type { NegocioConfig } from '@/lib/config'
 const config: NegocioConfig = {
   id: 'lacancha',
   nombre: 'La Cancha Padel',
+  nombreDisplay: { parte1: 'La Cancha', parte2: ' Padel' },
   direccion: 'Av. 20 de Diciembre 130 · Rojas',
   horario: {
     inicioMin: 9 * 60,
@@ -22,8 +23,8 @@ const config: NegocioConfig = {
   adminPassword: 'lacancha',
   emoji: '🎾',
   seleccionSimple: true,
-  bgColor: '#0c1a10',
-  accentColor: 'green',
+  tema: { accent: '#22c55e', accentHover: '#16a34a', bg: '#0c1a10' },
+  features: { multiRecurso: true },
 }
 
 export default config

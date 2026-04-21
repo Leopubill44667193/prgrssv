@@ -13,7 +13,7 @@ function fechaMinima() {
   return new Date().toLocaleDateString('en-CA')
 }
 
-export default function ReservarIdPage({ params }) {
+export default function ReservarIdPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [simuladorId, setSimuladorId] = useState('')
   const [fecha, setFecha] = useState('')
@@ -21,7 +21,7 @@ export default function ReservarIdPage({ params }) {
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [cargando, setCargando] = useState(false)
-  const [horasOcupadas, setHorasOcupadas] = useState([])
+  const [horasOcupadas, setHorasOcupadas] = useState<string[]>([])
   const [fechaBloqueada, setFechaBloqueada] = useState(false)
   const [diaNoHabil, setDiaNoHabil] = useState(false)
   const [horariosBloqueados, setHorariosBloqueados] = useState<string[]>([])
@@ -105,8 +105,8 @@ export default function ReservarIdPage({ params }) {
       <div className="border-b border-white/10 px-8 py-5 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-black tracking-widest uppercase">
-            <span className="text-[var(--accent)]">{negocio.nombre.split('.')[0]}.</span>
-            {negocio.nombre.split('.').slice(1).join('.')}
+            <span className="text-[var(--accent)]">{negocio.nombreDisplay?.parte1 ?? negocio.nombre.split('.')[0] + '.'}</span>
+            {negocio.nombreDisplay?.parte2 ?? negocio.nombre.split('.').slice(1).join('.')}
           </h1>
           <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">{negocio.direccion}</p>
         </div>

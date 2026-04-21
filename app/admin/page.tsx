@@ -6,6 +6,17 @@ import { supabase } from '@/lib/supabase'
 import { negocio } from '@/config'
 import { generarHorarios } from '@/lib/config'
 
+type Turno = {
+  id: string
+  fecha: string
+  hora_inicio: string
+  hora_fin: string
+  simulador_id: number
+  created_at: string
+  clientes: { nombre: string; telefono: string } | null
+  simuladores: { nombre: string } | null
+}
+
 const HORARIOS = generarHorarios(negocio.horario.inicioMin, negocio.horario.finMin, negocio.horario.intervaloMinutos)
 const RECURSOS = negocio.recursos
 
@@ -17,7 +28,7 @@ export default function Admin() {
   const [autenticado, setAutenticado] = useState(false)
   const [inputPass, setInputPass] = useState('')
   const [passError, setPassError] = useState(false)
-  const [turnos, setTurnos] = useState([])
+  const [turnos, setTurnos] = useState<Turno[]>([])
   const [loading, setLoading] = useState(false)
   const [fecha, setFecha] = useState(hoy())
   const [vista, setVista] = useState<'grilla' | 'tabla'>('grilla')
@@ -47,7 +58,7 @@ export default function Admin() {
     if (!todasFechas) query = query.eq('fecha', fecha)
     query = query.order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
     const { data, error } = await query
-    if (!error && data) setTurnos(data)
+    if (!error && data) setTurnos(data as unknown as Turno[])
     setLoading(false)
   }
 
@@ -94,7 +105,7 @@ export default function Admin() {
     setDiaBloqueado(null)
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm('Eliminar este turno?')) return
     const { error } = await supabase.from('turnos').delete().eq('id', id)
     if (!error) setTurnos(turnos.filter((t) => t.id !== id))

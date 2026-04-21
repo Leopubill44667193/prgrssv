@@ -41,8 +41,10 @@ Sistema de reservas online configurable por negocio. Un solo repo, una sola base
 npm run dev
 rm -rf .next && npm run dev  # si hay problemas de caché
 npm run lint
-git add -p && git commit -m "..." && git push origin main
+git add -p && git commit -m "..." && git push origin main && git push prgrssv main
 ```
+
+El repo tiene dos remotes: `origin` (sim-turnos.vercel.app) y `prgrssv` (prgrssv.vercel.app). **Siempre pushear a ambos** para que los dos deployments de Vercel se actualicen.
 
 No hay tests configurados y no se deben agregar salvo que se pida explícitamente.
 

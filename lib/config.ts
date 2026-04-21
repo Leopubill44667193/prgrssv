@@ -1,6 +1,10 @@
 export type NegocioConfig = {
   id: string
   nombre: string              // "OC.Hobbies.Racing"
+  nombreDisplay?: {
+    parte1: string            // se coloriza con accent
+    parte2?: string           // color normal, opcional
+  }
   direccion: string           // "Av. 3 de Febrero 283 · Rojas"
   horario: {
     inicioMin: number         // minutos desde medianoche, ej: 15*60=900
@@ -15,8 +19,18 @@ export type NegocioConfig = {
   adminPassword: string
   emoji?: string              // emoji representativo del recurso
   seleccionSimple?: boolean   // true = solo se puede elegir 1 recurso por turno
-  bgColor?: string            // color de fondo, default '#000000'
-  accentColor?: string        // color de acento, default 'red'
+  tema?: {
+    accent: string            // color de acento, ej: '#ef4444'
+    accentHover: string       // hover del acento, ej: '#dc2626'
+    bg: string                // color de fondo, ej: '#000000'
+  }
+  features?: {
+    multiRecurso?: boolean
+    listaEspera?: boolean
+    seniaObligatoria?: boolean
+    recordatorio24hs?: boolean
+    confirmacionCliente?: boolean
+  }
 }
 
 /** Genera el array de horarios a partir del rango del negocio.

@@ -3,6 +3,7 @@ import type { NegocioConfig } from '@/lib/config'
 const config: NegocioConfig = {
   id: 'prgrssv',
   nombre: 'Prgrssv',
+  nombreDisplay: { parte1: 'Prgrssv' },
   direccion: 'Zeballos 2239 6A · Rosario',
   horario: {
     inicioMin: 9 * 60,          // 09:00
@@ -19,6 +20,8 @@ const config: NegocioConfig = {
   adminPassword: 'progressevi',
   emoji: '✂️',
   seleccionSimple: true,
+  tema: { accent: '#ef4444', accentHover: '#dc2626', bg: '#000000' },
+  features: { multiRecurso: false },
 }
 
 export default config
