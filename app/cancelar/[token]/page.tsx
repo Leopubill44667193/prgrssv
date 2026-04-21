@@ -69,10 +69,10 @@ export default function CancelarTokenPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-8 max-w-lg mx-auto">
+    <main className="min-h-screen bg-[var(--bg)] text-white p-8 max-w-lg mx-auto">
       <div className="mt-12 mb-10">
-        <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-3">{negocio.nombre}</p>
-        <h1 className="text-4xl font-black uppercase tracking-tight">Cancelar<br /><span className="text-red-500">turno</span></h1>
+        <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-3">{negocio.nombre}</p>
+        <h1 className="text-4xl font-black uppercase tracking-tight">Cancelar<br /><span className="text-[var(--accent)]">turno</span></h1>
       </div>
 
       {estado === 'cargando' && (
@@ -113,7 +113,7 @@ export default function CancelarTokenPage() {
           <button
             onClick={confirmarCancelacion}
             disabled={estado === 'cancelando'}
-            className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm"
+            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm"
           >
             {estado === 'cancelando' ? 'Cancelando...' : 'Confirmar cancelación'}
           </button>

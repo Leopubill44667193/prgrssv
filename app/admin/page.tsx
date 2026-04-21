@@ -112,9 +112,9 @@ export default function Admin() {
 
   if (!autenticado) {
     return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center px-8">
+      <main className="min-h-screen bg-[var(--bg)] text-white flex items-center justify-center px-8">
         <div className="w-full max-w-sm">
-          <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-2 text-center">Panel</p>
+          <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-2 text-center">Panel</p>
           <h1 className="text-3xl font-black uppercase text-center mb-10">Admin</h1>
           <input
             type="password"
@@ -122,10 +122,10 @@ export default function Admin() {
             value={inputPass}
             onChange={(e) => { setInputPass(e.target.value); setPassError(false) }}
             onKeyDown={(e) => e.key === 'Enter' && login()}
-            className={'bg-white/5 border rounded-xl p-4 w-full text-white outline-none text-sm mb-3 ' + (passError ? 'border-red-500' : 'border-white/10 focus:border-red-500')}
+            className={'bg-white/5 border rounded-xl p-4 w-full text-white outline-none text-sm mb-3 ' + (passError ? 'border-[var(--accent)]' : 'border-white/10 focus:border-[var(--accent)]')}
           />
-          {passError && <p className="text-red-500 text-xs mb-3 tracking-widest uppercase">Contraseña incorrecta</p>}
-          <button onClick={login} className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl p-4 font-black uppercase tracking-widest transition text-sm">
+          {passError && <p className="text-[var(--accent)] text-xs mb-3 tracking-widest uppercase">Contraseña incorrecta</p>}
+          <button onClick={login} className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl p-4 font-black uppercase tracking-widest transition text-sm">
             Entrar
           </button>
         </div>
@@ -145,19 +145,19 @@ export default function Admin() {
   })
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
+    <main className="min-h-screen bg-[var(--bg)] text-white p-8">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
           <div>
-            <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-1">Panel</p>
+            <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-1">Panel</p>
             <h1 className="text-3xl font-black uppercase">Admin</h1>
             <p className="text-gray-600 text-sm mt-1 capitalize">{todasFechas ? 'Todas las fechas' : fechaFormateada} · {turnos.length} turnos</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={() => { const next = !todasFechas; setTodasFechas(next); if (next) setVista('tabla') }}
-              className={'px-4 py-2 rounded-xl text-xs uppercase tracking-widest transition border ' + (todasFechas ? 'bg-red-500 border-red-500 text-white' : 'border-white/10 text-gray-500 hover:text-white')}
+              className={'px-4 py-2 rounded-xl text-xs uppercase tracking-widest transition border ' + (todasFechas ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'border-white/10 text-gray-500 hover:text-white')}
             >
               Todos
             </button>
@@ -167,17 +167,17 @@ export default function Admin() {
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none text-sm focus:border-red-500"
+                  className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none text-sm focus:border-[var(--accent)]"
                 />
                 <div className="flex border border-white/10 rounded-xl overflow-hidden text-xs">
-                  <button onClick={() => setVista('grilla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'grilla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Grilla</button>
-                  <button onClick={() => setVista('tabla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'tabla' ? 'bg-red-500 text-white' : 'text-gray-500 hover:text-white')}>Tabla</button>
+                  <button onClick={() => setVista('grilla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'grilla' ? 'bg-[var(--accent)] text-white' : 'text-gray-500 hover:text-white')}>Grilla</button>
+                  <button onClick={() => setVista('tabla')} className={'px-4 py-2 uppercase tracking-widest transition ' + (vista === 'tabla' ? 'bg-[var(--accent)] text-white' : 'text-gray-500 hover:text-white')}>Tabla</button>
                 </div>
               </>
             )}
             <button
               onClick={() => { sessionStorage.removeItem('admin_ok'); setAutenticado(false) }}
-              className="text-xs text-gray-600 hover:text-red-500 uppercase tracking-widest transition"
+              className="text-xs text-gray-600 hover:text-[var(--accent)] uppercase tracking-widest transition"
             >
               Salir
             </button>
@@ -250,12 +250,12 @@ export default function Admin() {
                           {diaBloqueado ? (
                             <div className="rounded-lg p-2 text-center border border-yellow-500/10 text-yellow-900 text-xs">bloq.</div>
                           ) : turno ? (
-                            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center group relative">
-                              <p className="text-xs font-bold text-red-400 truncate">{turno.clientes?.nombre}</p>
+                            <div className="bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg p-2 text-center group relative">
+                              <p className="text-xs font-bold text-[var(--accent)]/80 truncate">{turno.clientes?.nombre}</p>
                               <p className="text-xs text-gray-600">{turno.clientes?.telefono}</p>
                               <button
                                 onClick={() => handleDelete(turno.id)}
-                                className="absolute top-1 right-1 text-red-700 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition"
+                                className="absolute top-1 right-1 text-[var(--accent)]/50 hover:text-[var(--accent)]/80 text-xs opacity-0 group-hover:opacity-100 transition"
                               >✕</button>
                             </div>
                           ) : horariosBloqueados.has(hora) ? (
@@ -301,7 +301,7 @@ export default function Admin() {
                       {(() => { const d = new Date(t.created_at); d.setHours(d.getHours() - 3); return d.toLocaleString('es-AR', { hour12: false }) })()}
                     </td>
                     <td className="p-4">
-                      <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:text-red-400 text-xs uppercase tracking-widest transition">Eliminar</button>
+                      <button onClick={() => handleDelete(t.id)} className="text-[var(--accent)] hover:text-[var(--accent)]/80 text-xs uppercase tracking-widest transition">Eliminar</button>
                     </td>
                   </tr>
                 ))}

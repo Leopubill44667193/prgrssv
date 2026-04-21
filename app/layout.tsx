@@ -3,6 +3,13 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { negocio } from "@/config";
 
+const accentMap: Record<string, { accent: string; accentHover: string }> = {
+  red:   { accent: '#ef4444', accentHover: '#dc2626' },
+  green: { accent: '#22c55e', accentHover: '#16a34a' },
+}
+const theme = accentMap[negocio.accentColor ?? 'red'] ?? accentMap.red
+const bg = negocio.bgColor ?? '#000000'
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -36,6 +43,9 @@ export default function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <style>{`:root { --accent: ${theme.accent}; --accent-hover: ${theme.accentHover}; --bg: ${bg}; }`}</style>
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

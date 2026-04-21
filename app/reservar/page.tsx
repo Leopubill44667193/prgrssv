@@ -119,20 +119,20 @@ export default function ReservarPage() {
   const disponiblesEnHora = (hora: string) => RECURSOS.length - (ocupadosPorHora[hora] ?? []).length
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-[var(--bg)] text-white">
       <div className="border-b border-white/10 px-8 py-5 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-black tracking-widest uppercase">
-            <span className="text-red-500">{negocio.nombre.split('.')[0]}.</span>
+            <span className="text-[var(--accent)]">{negocio.nombre.split('.')[0]}.</span>
             {negocio.nombre.split('.').slice(1).join('.')}
           </h1>
           <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">{negocio.direccion}</p>
         </div>
-        <a href="/" className="text-xs text-gray-600 hover:text-red-500 tracking-widest uppercase transition">← Volver</a>
+        <a href="/" className="text-xs text-gray-600 hover:text-[var(--accent)] tracking-widest uppercase transition">← Volver</a>
       </div>
 
       <div className="max-w-xl mx-auto px-8 py-12">
-        <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-2">Nueva reserva</p>
+        <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-2">Nueva reserva</p>
         <h2 className="text-4xl font-black uppercase mb-10">Elegí tu turno</h2>
 
         {/* Fecha */}
@@ -140,7 +140,7 @@ export default function ReservarPage() {
           <label className="block text-xs uppercase tracking-widest text-gray-500 mb-3">Fecha</label>
           <input
             type="date"
-            className="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-white focus:border-red-500 outline-none text-sm"
+            className="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-white focus:border-[var(--accent)] outline-none text-sm"
             value={fecha}
             min={fechaMinima()}
             onChange={(e) => setFecha(e.target.value)}
@@ -181,11 +181,11 @@ export default function ReservarPage() {
                     disabled={lleno}
                     className={'rounded-xl py-3 px-2 text-center text-sm font-medium transition border flex flex-col items-center gap-1 ' +
                       (lleno ? 'border-white/5 text-gray-700 cursor-not-allowed ' : '') +
-                      (seleccionado ? 'border-red-500 bg-red-500/10 text-red-400 ' : '') +
-                      (!lleno && !seleccionado ? 'border-white/10 hover:border-red-500 hover:text-red-400 text-gray-300' : '')}
+                      (seleccionado ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]/80 ' : '') +
+                      (!lleno && !seleccionado ? 'border-white/10 hover:border-[var(--accent)] hover:text-[var(--accent)]/80 text-gray-300' : '')}
                   >
                     <span>{hora}</span>
-                    <span className={'text-xs ' + (lleno ? 'text-gray-700' : seleccionado ? 'text-red-500/50' : 'text-gray-600')}>
+                    <span className={'text-xs ' + (lleno ? 'text-gray-700' : seleccionado ? 'text-[var(--accent)]/50' : 'text-gray-600')}>
                       {pasado ? 'pasado' : bloqueado ? 'no disp.' : lleno ? 'lleno' : disp + (disp === 1 ? ' libre' : ' libres')}
                     </span>
                   </button>
@@ -203,7 +203,7 @@ export default function ReservarPage() {
                 {negocio.recursoNombrePlural}
               </label>
               {recursosSeleccionados.length > 0 && (
-                <button onClick={() => setRecursosSeleccionados([])} className="text-xs text-gray-600 hover:text-red-400 transition uppercase tracking-widest">
+                <button onClick={() => setRecursosSeleccionados([])} className="text-xs text-gray-600 hover:text-[var(--accent)]/80 transition uppercase tracking-widest">
                   Limpiar
                 </button>
               )}
@@ -219,15 +219,15 @@ export default function ReservarPage() {
                     disabled={ocupado}
                     className={'rounded-2xl py-6 text-center transition border flex flex-col items-center gap-2 ' +
                       (ocupado ? 'border-white/5 text-gray-700 cursor-not-allowed ' : '') +
-                      (seleccionado ? 'border-red-500 bg-red-500/10 ' : '') +
-                      (!ocupado && !seleccionado ? 'border-white/10 hover:border-red-500 ' : '')}
+                      (seleccionado ? 'border-[var(--accent)] bg-[var(--accent)]/10 ' : '') +
+                      (!ocupado && !seleccionado ? 'border-white/10 hover:border-[var(--accent)] ' : '')}
                   >
                     <span className={'text-2xl ' + (ocupado ? 'grayscale opacity-30' : '')}>{negocio.emoji ?? '🏎'}</span>
                     <span className={'text-xs font-bold tracking-widest uppercase ' +
-                      (ocupado ? 'text-gray-700' : seleccionado ? 'text-red-400' : 'text-gray-400')}>
+                      (ocupado ? 'text-gray-700' : seleccionado ? 'text-[var(--accent)]/80' : 'text-gray-400')}>
                       {r.nombre}
                     </span>
-                    <span className={'text-xs ' + (ocupado ? 'text-gray-700' : seleccionado ? 'text-red-500/50' : 'text-gray-600')}>
+                    <span className={'text-xs ' + (ocupado ? 'text-gray-700' : seleccionado ? 'text-[var(--accent)]/50' : 'text-gray-600')}>
                       {ocupado ? 'ocupado' : seleccionado ? 'elegido' : 'libre'}
                     </span>
                   </button>
@@ -243,11 +243,11 @@ export default function ReservarPage() {
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Tus datos</p>
             <div className="mb-4">
               <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Nombre</label>
-              <input type="text" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-red-500 outline-none text-sm" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan Perez" />
+              <input type="text" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-[var(--accent)] outline-none text-sm" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan Perez" />
             </div>
             <div>
               <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Telefono</label>
-              <input type="tel" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-red-500 outline-none text-sm" value={telefono} onChange={(e) => setTelefono(e.target.value.replace(/[^0-9]/g, ''))} placeholder="11 1234-5678" />
+              <input type="tel" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-[var(--accent)] outline-none text-sm" value={telefono} onChange={(e) => setTelefono(e.target.value.replace(/[^0-9]/g, ''))} placeholder="11 1234-5678" />
             </div>
           </div>
         )}
@@ -257,7 +257,7 @@ export default function ReservarPage() {
           <button
             onClick={confirmarReserva}
             disabled={cargando}
-            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl p-4 font-black uppercase tracking-widest transition disabled:opacity-50 text-sm"
+            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl p-4 font-black uppercase tracking-widest transition disabled:opacity-50 text-sm"
           >
             {cargando
               ? 'Guardando...'

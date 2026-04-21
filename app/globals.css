@@ -1,7 +1,13 @@
 @import "tailwindcss";
 
+:root {
+  --accent: #ef4444;
+  --accent-hover: #dc2626;
+  --bg: #000000;
+}
+
 body {
-  background: #000;
+  background: var(--bg);
   color: #fff;
   font-family: Arial, Helvetica, sans-serif;
 }

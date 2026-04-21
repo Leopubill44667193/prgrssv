@@ -26,13 +26,13 @@ function Confirmado() {
   )
 
   return (
-    <main className="min-h-screen bg-black text-white p-8 max-w-lg mx-auto mt-12">
+    <main className="min-h-screen bg-[var(--bg)] text-white p-8 max-w-lg mx-auto mt-12">
       <div className="text-center mb-10">
         <div className="text-6xl mb-5">{negocio.emoji ?? '🏁'}</div>
         <h1 className="text-4xl font-black uppercase mb-2">
           {tokens.length === 1 ? 'Turno confirmado' : 'Turnos confirmados'}
         </h1>
-        <p className="text-red-500 text-xs tracking-widest uppercase">{negocio.nombre} · {negocio.direccion}</p>
+        <p className="text-[var(--accent)] text-xs tracking-widest uppercase">{negocio.nombre} · {negocio.direccion}</p>
       </div>
 
       {/* Resumen */}
@@ -69,7 +69,7 @@ function Confirmado() {
                   <p className="text-xs text-gray-700 mb-1 uppercase tracking-widest">{nombreRecurso(simus[i] ?? String(i + 1))}</p>
                 )}
                 <p className="break-all text-xs text-gray-500 mb-1">{cancelUrl}</p>
-                <a href={cancelUrl} className="text-red-500 text-xs underline">Cancelar este turno</a>
+                <a href={cancelUrl} className="text-[var(--accent)] text-xs underline">Cancelar este turno</a>
               </div>
             )
           })}

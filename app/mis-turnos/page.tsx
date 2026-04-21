@@ -61,10 +61,10 @@ export default function MisTurnosPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-8 max-w-lg mx-auto">
+    <main className="min-h-screen bg-[var(--bg)] text-white p-8 max-w-lg mx-auto">
       <div className="mt-12 mb-10">
-        <p className="text-xs tracking-[0.4em] uppercase text-red-500 mb-3">{negocio.nombre}</p>
-        <h1 className="text-4xl font-black uppercase tracking-tight">Mis<br /><span className="text-red-500">turnos</span></h1>
+        <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-3">{negocio.nombre}</p>
+        <h1 className="text-4xl font-black uppercase tracking-tight">Mis<br /><span className="text-[var(--accent)]">turnos</span></h1>
       </div>
 
       <div className="mb-8">
@@ -76,12 +76,12 @@ export default function MisTurnosPage() {
             onChange={e => setTelefono(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && telefono && !buscando && buscar()}
             placeholder="Ej: 2475123456"
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-700 focus:outline-none focus:border-red-500"
+            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-700 focus:outline-none focus:border-[var(--accent)]"
           />
           <button
             onClick={buscar}
             disabled={buscando || !telefono}
-            className="bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm"
+            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-40 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm"
           >
             {buscando ? '...' : 'Buscar'}
           </button>
@@ -91,7 +91,7 @@ export default function MisTurnosPage() {
       {noEncontrado && (
         <div className="text-center py-8">
           <p className="text-gray-500 text-sm mb-6">No encontramos reservas con ese telefono.</p>
-          <Link href="/reservar" className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
+          <Link href="/reservar" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
             Reservar ahora
           </Link>
         </div>
@@ -101,7 +101,7 @@ export default function MisTurnosPage() {
         <div className="text-center py-8">
           <p className="text-white font-bold mb-1">Hola, {nombre}</p>
           <p className="text-gray-500 text-sm mb-6">No tenes turnos proximos.</p>
-          <Link href="/reservar" className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
+          <Link href="/reservar" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
             Reservar ahora
           </Link>
         </div>
@@ -121,7 +121,7 @@ export default function MisTurnosPage() {
               </div>
               <Link
                 href={`/cancelar/${t.cancel_token}`}
-                className="bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 text-red-400 hover:text-red-300 px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-bold transition"
+                className="bg-white/5 hover:bg-[var(--accent)]/20 border border-white/10 hover:border-[var(--accent)]/50 text-[var(--accent)]/80 hover:text-[var(--accent)] px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-bold transition"
               >
                 Cancelar
               </Link>
