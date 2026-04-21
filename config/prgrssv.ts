@@ -17,10 +17,10 @@ const config: NegocioConfig = {
   recursoNombre: 'Peluquero',
   recursoNombrePlural: 'Peluqueros',
   duracionMinutos: 30,
-  adminPassword: 'progressevi',
+  adminPassword: 'guyj',
   emoji: '✂️',
   seleccionSimple: true,
-  tema: { accent: '#ef4444', accentHover: '#dc2626', bg: '#000000' },
+  tema: { accent: '#eab308', accentHover: '#ca8a04', bg: '#000000' },
   features: { multiRecurso: false },
 }
 
