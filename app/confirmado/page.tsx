@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { negocio } from '@/config'
 
 function Confirmado() {
@@ -11,21 +11,24 @@ function Confirmado() {
   const hora = searchParams.get('hora') ?? ''
   const horas = hora.split(',').filter(Boolean)
   const simus = (searchParams.get('simus') ?? '').split(',').filter(Boolean)
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const [origin, setOrigin] = useState('')
+  useEffect(() => { setOrigin(window.location.origin) }, [])
 
   const fechaFormateada = fecha
     ? new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
     : ''
 
+  const nombreRecurso = (id: string) => negocio.recursos.find(r => r.id === Number(id))?.nombre ?? `${negocio.recursoNombre} ${id}`
+
   const waTexto = encodeURIComponent(
-    `Reserva ${negocio.nombre}\n📅 ${fechaFormateada}\n⏰ ${horas.length > 1 ? horas.join(", ") : hora} hs\n🏎 Simulador${simus.length > 1 ? 'es' : ''} ${simus.join(', ')}\n\nLinks de cancelación:\n` +
-    tokens.map((t, i) => `Sim ${simus[i] ?? i + 1}: ${origin}/cancelar/${t}`).join('\n')
+    `Reserva ${negocio.nombre}\n📅 ${fechaFormateada}\n⏰ ${horas.length > 1 ? horas.join(", ") : hora} hs\n${negocio.emoji ?? '🏎'} ${simus.map(s => nombreRecurso(s)).join(', ')}\n\nLinks de cancelación:\n` +
+    tokens.map((t, i) => `${nombreRecurso(simus[i] ?? String(i + 1))}: ${origin}/cancelar/${t}`).join('\n')
   )
 
   return (
     <main className="min-h-screen bg-black text-white p-8 max-w-lg mx-auto mt-12">
       <div className="text-center mb-10">
-        <div className="text-6xl mb-5">🏁</div>
+        <div className="text-6xl mb-5">{negocio.emoji ?? '🏁'}</div>
         <h1 className="text-4xl font-black uppercase mb-2">
           {tokens.length === 1 ? 'Turno confirmado' : 'Turnos confirmados'}
         </h1>
@@ -45,9 +48,9 @@ function Confirmado() {
           </div>
           <div className="col-span-2">
             <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">
-              {simus.length === 1 ? 'Simulador' : 'Simuladores'}
+              {simus.length === 1 ? negocio.recursoNombre : negocio.recursoNombrePlural}
             </p>
-            <p className="text-sm font-medium">{simus.map((s) => `Sim ${s}`).join(' · ')}</p>
+            <p className="text-sm font-medium">{simus.map((s) => nombreRecurso(s)).join(' · ')}</p>
           </div>
         </div>
       )}
@@ -63,7 +66,7 @@ function Confirmado() {
             return (
               <div key={token} className={tokens.length > 1 && i < tokens.length - 1 ? 'pb-3 border-b border-white/5' : ''}>
                 {tokens.length > 1 && (
-                  <p className="text-xs text-gray-700 mb-1 uppercase tracking-widest">Sim {simus[i] ?? i + 1}</p>
+                  <p className="text-xs text-gray-700 mb-1 uppercase tracking-widest">{nombreRecurso(simus[i] ?? String(i + 1))}</p>
                 )}
                 <p className="break-all text-xs text-gray-500 mb-1">{cancelUrl}</p>
                 <a href={cancelUrl} className="text-red-500 text-xs underline">Cancelar este turno</a>

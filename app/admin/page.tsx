@@ -43,6 +43,7 @@ export default function Admin() {
     let query = supabase
       .from('turnos')
       .select('id, fecha, hora_inicio, hora_fin, simulador_id, created_at, clientes ( nombre, telefono ), simuladores ( nombre )')
+      .eq('negocio_id', negocio.id)
     if (!todasFechas) query = query.eq('fecha', fecha)
     query = query.order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
     const { data, error } = await query
@@ -51,16 +52,16 @@ export default function Admin() {
   }
 
   const fetchHorariosBloqueados = async () => {
-    const { data } = await supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha)
+    const { data } = await supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha).eq('negocio_id', negocio.id)
     setHorariosBloqueados(new Set((data ?? []).map((d) => d.hora.slice(0, 5))))
   }
 
   const toggleHorario = async (hora: string) => {
     if (horariosBloqueados.has(hora)) {
-      await supabase.from('horarios_bloqueados').delete().eq('fecha', fecha).eq('hora', hora)
+      await supabase.from('horarios_bloqueados').delete().eq('fecha', fecha).eq('hora', hora).eq('negocio_id', negocio.id)
       setHorariosBloqueados((prev) => { const s = new Set(prev); s.delete(hora); return s })
     } else {
-      await supabase.from('horarios_bloqueados').insert({ fecha, hora })
+      await supabase.from('horarios_bloqueados').insert({ fecha, hora, negocio_id: negocio.id })
       setHorariosBloqueados((prev) => new Set([...prev, hora]))
     }
   }
@@ -70,6 +71,7 @@ export default function Admin() {
       .from('dias_bloqueados')
       .select('motivo')
       .eq('fecha', fecha)
+      .eq('negocio_id', negocio.id)
       .single()
     setDiaBloqueado(data ?? null)
     setMostrandoFormBloqueo(false)
@@ -79,7 +81,7 @@ export default function Admin() {
   const bloquearDia = async () => {
     const { error } = await supabase
       .from('dias_bloqueados')
-      .upsert({ fecha, motivo: motivoInput.trim() || null }, { onConflict: 'fecha' })
+      .upsert({ fecha, motivo: motivoInput.trim() || null, negocio_id: negocio.id }, { onConflict: 'negocio_id,fecha' })
     if (error) {
       alert('Error al bloquear: ' + error.message)
       return
@@ -88,7 +90,7 @@ export default function Admin() {
   }
 
   const desbloquearDia = async () => {
-    await supabase.from('dias_bloqueados').delete().eq('fecha', fecha)
+    await supabase.from('dias_bloqueados').delete().eq('fecha', fecha).eq('negocio_id', negocio.id)
     setDiaBloqueado(null)
   }
 
@@ -291,7 +293,7 @@ export default function Admin() {
                 {turnos.map((t) => (
                   <tr key={t.id} className="border-b border-white/5 hover:bg-white/5 transition">
                     {todasFechas && <td className="p-4 text-gray-400 text-xs">{new Date(t.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</td>}
-                    <td className="p-4 font-medium">{t.simuladores?.nombre}</td>
+                    <td className="p-4 font-medium">{RECURSOS.find(r => r.id === t.simulador_id)?.nombre ?? t.simuladores?.nombre}</td>
                     <td className="p-4">{t.clientes?.nombre}</td>
                     <td className="p-4 text-gray-400">{t.clientes?.telefono}</td>
                     <td className="p-4">{t.hora_inicio?.slice(0, 5)} - {t.hora_fin?.slice(0, 5)}</td>

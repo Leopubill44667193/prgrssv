@@ -40,9 +40,9 @@ export default function ReservarIdPage({ params }) {
       }
       setDiaNoHabil(false)
       const [{ data: turnosData }, { data: bloqueo }, { data: horBloq }] = await Promise.all([
-        supabase.from('turnos').select('hora_inicio').eq('simulador_id', Number(simuladorId)).eq('fecha', fecha),
-        supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).single(),
-        supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha),
+        supabase.from('turnos').select('hora_inicio').eq('simulador_id', Number(simuladorId)).eq('fecha', fecha).eq('negocio_id', negocio.id),
+        supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).eq('negocio_id', negocio.id).single(),
+        supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha).eq('negocio_id', negocio.id),
       ])
       setFechaBloqueada(!!bloqueo)
       setHorariosBloqueados((horBloq ?? []).map((h) => h.hora.slice(0, 5)))
@@ -63,12 +63,12 @@ export default function ReservarIdPage({ params }) {
   async function confirmarReserva() {
     setCargando(true)
     let clienteId
-    const { data: clienteExistente } = await supabase.from('clientes').select('id').eq('telefono', telefono).single()
+    const { data: clienteExistente } = await supabase.from('clientes').select('id').eq('telefono', telefono).eq('negocio_id', negocio.id).single()
     if (clienteExistente) {
       clienteId = clienteExistente.id
       await supabase.from('clientes').update({ nombre }).eq('id', clienteId)
     } else {
-      const { data: nuevoCliente, error } = await supabase.from('clientes').insert({ nombre, telefono }).select('id').single()
+      const { data: nuevoCliente, error } = await supabase.from('clientes').insert({ nombre, telefono, negocio_id: negocio.id }).select('id').single()
       if (error || !nuevoCliente) { alert('Error al guardar el cliente'); setCargando(false); return }
       clienteId = nuevoCliente.id
     }
@@ -78,6 +78,7 @@ export default function ReservarIdPage({ params }) {
       const [horas, minutos] = hora.split(':').map(Number)
       const horaFin = String((horas + 1) % 24).padStart(2, '0') + ':' + String(minutos).padStart(2, '0')
       const { data: turnoCreado, error: errorTurno } = await supabase.from('turnos').insert({
+        negocio_id: negocio.id,
         simulador_id: Number(simuladorId),
         cliente_id: clienteId,
         fecha,
@@ -95,7 +96,7 @@ export default function ReservarIdPage({ params }) {
   async function notificarReserva(nombre: string, telefono: string, fecha: string, horas: string[], simId: string) {
     const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
     const horasTexto = horas.length === 1 ? horas[0] + ' hs' : horas.join(', ') + ' hs'
-    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${horasTexto}\n🏎 ${negocio.recursoNombre} ${simId}\n👤 ${nombre}\n📱 ${telefono}`
+    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${horasTexto}\n${negocio.emoji ?? '🏎'} ${negocio.recursos.find(r => r.id === Number(simId))?.nombre ?? negocio.recursoNombre + ' ' + simId}\n👤 ${nombre}\n📱 ${telefono}`
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
 

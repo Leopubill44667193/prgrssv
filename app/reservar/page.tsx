@@ -37,9 +37,9 @@ export default function ReservarPage() {
       }
       setDiaNoHabil(false)
       const [{ data: turnosData }, { data: bloqueo }, { data: horBloq }] = await Promise.all([
-        supabase.from('turnos').select('hora_inicio, simulador_id').eq('fecha', fecha),
-        supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).single(),
-        supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha),
+        supabase.from('turnos').select('hora_inicio, simulador_id').eq('fecha', fecha).eq('negocio_id', negocio.id),
+        supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).eq('negocio_id', negocio.id).single(),
+        supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha).eq('negocio_id', negocio.id),
       ])
       setFechaBloqueada(!!bloqueo)
       setHorariosBloqueados((horBloq ?? []).map((h) => h.hora.slice(0, 5)))
@@ -65,29 +65,33 @@ export default function ReservarPage() {
     const ocupados = ocupadosPorHora[horaSeleccionada] ?? []
     if (ocupados.includes(id)) return
     setRecursosSeleccionados((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+      negocio.seleccionSimple
+        ? prev.includes(id) ? [] : [id]
+        : prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     )
   }
 
   async function confirmarReserva() {
     setCargando(true)
     let clienteId
-    const { data: clienteExistente } = await supabase.from('clientes').select('id').eq('telefono', telefono).single()
+    const { data: clienteExistente } = await supabase.from('clientes').select('id').eq('telefono', telefono).eq('negocio_id', negocio.id).single()
     if (clienteExistente) {
       clienteId = clienteExistente.id
       await supabase.from('clientes').update({ nombre }).eq('id', clienteId)
     } else {
-      const { data: nuevoCliente, error } = await supabase.from('clientes').insert({ nombre, telefono }).select('id').single()
+      const { data: nuevoCliente, error } = await supabase.from('clientes').insert({ nombre, telefono, negocio_id: negocio.id }).select('id').single()
       if (error || !nuevoCliente) { alert('Error al guardar el cliente: ' + (error?.message ?? 'sin datos')); setCargando(false); return }
       clienteId = nuevoCliente.id
     }
 
     const [horas, minutos] = horaSeleccionada.split(':').map(Number)
-    const horaFin = String((horas + 1) % 24).padStart(2, '0') + ':' + String(minutos).padStart(2, '0')
+    const totalMin = horas * 60 + minutos + negocio.duracionMinutos
+    const horaFin = String(Math.floor(totalMin / 60) % 24).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0')
 
     const tokens: string[] = []
     for (const simId of recursosSeleccionados) {
       const { data: turnoCreado, error: errorTurno } = await supabase.from('turnos').insert({
+        negocio_id: negocio.id,
         simulador_id: simId,
         cliente_id: clienteId,
         fecha,
@@ -107,7 +111,7 @@ export default function ReservarPage() {
     const recursoTexto = recursos.length === 1
       ? `${negocio.recursoNombre} ${recursos[0]}`
       : `${negocio.recursoNombrePlural} ${recursos.join(', ')}`
-    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${hora} hs\n🏎 ${recursoTexto}\n👤 ${nombre}\n📱 ${telefono}`
+    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${hora} hs\n${negocio.emoji ?? '🏎'} ${recursoTexto}\n👤 ${nombre}\n📱 ${telefono}`
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
 
@@ -218,10 +222,10 @@ export default function ReservarPage() {
                       (seleccionado ? 'border-red-500 bg-red-500/10 ' : '') +
                       (!ocupado && !seleccionado ? 'border-white/10 hover:border-red-500 ' : '')}
                   >
-                    <span className={'text-2xl ' + (ocupado ? 'grayscale opacity-30' : '')}>🏎</span>
+                    <span className={'text-2xl ' + (ocupado ? 'grayscale opacity-30' : '')}>{negocio.emoji ?? '🏎'}</span>
                     <span className={'text-xs font-bold tracking-widest uppercase ' +
                       (ocupado ? 'text-gray-700' : seleccionado ? 'text-red-400' : 'text-gray-400')}>
-                      {negocio.recursoNombre} {r.id}
+                      {r.nombre}
                     </span>
                     <span className={'text-xs ' + (ocupado ? 'text-gray-700' : seleccionado ? 'text-red-500/50' : 'text-gray-600')}>
                       {ocupado ? 'ocupado' : seleccionado ? 'elegido' : 'libre'}

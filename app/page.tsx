@@ -31,7 +31,7 @@ export default function Home() {
           <span className="text-red-500">turno</span>
         </h2>
         <p className="text-gray-600 text-sm tracking-wide mb-12">
-          {negocio.recursos.length} {negocio.recursoNombre.toLowerCase()}s · Turnos de {negocio.duracionMinutos} min · Elegí tu butaca
+          {negocio.recursos.length} {negocio.recursoNombrePlural.toLowerCase()} · Turnos de {negocio.duracionMinutos} min · Reservá tu {negocio.recursoNombre.toLowerCase()}
         </p>
         <Link href="/reservar" className="bg-red-500 hover:bg-red-600 text-white rounded-2xl px-12 py-5 font-black uppercase tracking-widest transition text-sm">
           Reservar ahora

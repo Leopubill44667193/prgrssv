@@ -51,7 +51,7 @@ export default function CancelarTokenPage() {
     const fechaFormateada = new Date(turno.fecha + 'T12:00:00').toLocaleDateString('es-AR', {
       weekday: 'long', day: 'numeric', month: 'long'
     })
-    const mensaje = `❌ Turno cancelado\n👤 ${turno.cliente.nombre}\n📅 ${fechaFormateada}\n⏰ ${turno.hora_inicio.slice(0, 5)} hs\n🏎 ${negocio.recursoNombre} ${turno.simulador_id}`
+    const mensaje = `❌ Turno cancelado\n👤 ${turno.cliente.nombre}\n📅 ${fechaFormateada}\n⏰ ${turno.hora_inicio.slice(0, 5)} hs\n${negocio.emoji ?? '🏎'} ${negocio.recursos.find(r => r.id === turno.simulador_id)?.nombre ?? negocio.recursoNombre + ' ' + turno.simulador_id}`
 
     await fetch('/api/notificar', {
       method: 'POST',

@@ -8,28 +8,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Estado:** En producción (sim-turnos.vercel.app)
 
-Sistema de reservas online configurable por negocio. Cada cliente tiene su propio archivo de config, una instancia de Supabase, y un deployment en Vercel con su env var `NEXT_PUBLIC_NEGOCIO_ID`.
+Sistema de reservas online configurable por negocio. Un solo repo, una sola base de datos Supabase compartida, múltiples deployments en Vercel.
 
 ---
 
 ## Negocios activos
 
-| ID | Negocio | Direccion | Recursos | Horario |
+| ID | Negocio | Dirección | Recursos | Horario |
 |----|---------|-----------|----------|---------|
-| `sim-turnos` | OC.Hobbies.Racing | Av. 3 de Febrero 283, Rojas | 4 simuladores, 60 min | 15:00-02:00 todos los dias |
+| `sim-turnos` | OC.Hobbies.Racing | Av. 3 de Febrero 283, Rojas | 4 simuladores, 60 min | 15:00-02:00 todos los días |
 | `prgrssv` | Prgrssv | Zeballos 2239 6A, Rosario | 1 peluquero, 30 min | 09:00-19:30 Lun-Vie |
+| `lacancha` | La Cancha Padel | Av. 20 de Diciembre 130, Rojas | 5 canchas, 90 min | 09:00-00:00 todos los días |
 
 ---
 
 ## Stack
 
-| Capa | Tecnologia |
+| Capa | Tecnología |
 |------|------------|
 | Framework | Next.js (App Router) |
 | UI | React 19 + Tailwind CSS v4 |
-| Base de datos | Supabase (PostgreSQL) — una instancia por negocio |
-| Auth admin | Contrasena en config del negocio + sessionStorage |
-| Notificaciones | Twilio WhatsApp Sandbox |
+| Base de datos | Supabase (PostgreSQL) — una sola instancia compartida, aislada por `negocio_id` |
+| Auth admin | Contraseña en config del negocio + sessionStorage |
+| Notificaciones | Twilio WhatsApp |
 | Deploy | Vercel |
 
 ---
@@ -37,21 +38,63 @@ Sistema de reservas online configurable por negocio. Cada cliente tiene su propi
 ## Comandos
 
 ```bash
-# Desarrollo (desde WSL)
-cd /home/usuario/proyectos/sim-turnos
 npm run dev
-
-# Limpiar cache y reiniciar
-rm -rf .next && npm run dev
-
-# Lint
+rm -rf .next && npm run dev  # si hay problemas de caché
 npm run lint
-
-# Push a produccion
 git add -p && git commit -m "..." && git push origin main
 ```
 
-No hay tests configurados. Los errores de TypeScript y ESLint no bloquean el build (`next.config.ts` tiene `ignoreBuildErrors: true` y `ignoreDuringBuilds: true`).
+No hay tests configurados y no se deben agregar salvo que se pida explícitamente.
+
+---
+
+## Agregar un negocio nuevo
+
+1. Copiar `config/sim-turnos.ts` como base y renombrar
+2. Completar los campos (ver sección NegocioConfig abajo)
+3. Registrar en `config/index.ts`
+4. Crear deployment en Vercel con las variables de entorno del nuevo negocio
+
+**No hace falta crear una Supabase nueva.** La BD es compartida y los datos se aíslan por `negocio_id`.
+
+---
+
+## NegocioConfig — todos los campos
+
+```ts
+{
+  id: string            // identificador único, debe coincidir con NEXT_PUBLIC_NEGOCIO_ID
+  nombre: string        // nombre visible del negocio
+  direccion: string     // dirección, se muestra en el header y footer
+  horario: {
+    inicioMin: number   // minutos desde medianoche. Ej: 9*60 = 540 (09:00)
+    finMin: number      // minutos de cierre. Ej: 24*60 = 1440 (00:00). Soporta cruce de medianoche
+    intervaloMinutos: number  // duración del slot en minutos (30, 60, 90, etc.)
+  }
+  diasHabiles?: number[]      // 0=Dom, 1=Lun ... 6=Sáb. undefined = todos los días
+  recursos: { id: number; nombre: string }[]  // lista de recursos. El nombre es lo que se muestra
+  recursoNombre: string       // singular: "Simulador", "Cancha", "Peluquero"
+  recursoNombrePlural: string // plural: "Simuladores", "Canchas", "Peluqueros"
+  duracionMinutos: number     // duración del turno en minutos
+  adminPassword: string       // contraseña del panel admin
+  emoji: string               // emoji del recurso. Se usa en favicon, botones y mensajes WhatsApp
+  seleccionSimple?: boolean   // true = solo se elige 1 recurso por turno. false/undefined = multi-select
+  bgColor?: string            // color de fondo CSS. Default: '#000000'
+  accentColor?: string        // color de acento. Default: 'red'
+}
+```
+
+**Sobre el nombre del recurso:** se muestra tal cual en la UI, mensajes de WhatsApp y admin. Si un recurso tiene característica especial, incluirla en el nombre (ej: `'Cancha 5 (Blindex)'`).
+
+**Sobre features nuevas:** asumir que pueden ser opt-in por negocio vía config. Si una feature tiene sentido solo para algunos negocios, agregar un campo al tipo y que cada config lo active o no.
+
+---
+
+## Regla central: negocio_id en todos los queries
+
+Todos los queries a Supabase deben filtrar por `.eq('negocio_id', negocio.id)`.
+Todos los inserts deben incluir `negocio_id: negocio.id`.
+Sin esto los datos se mezclan entre negocios.
 
 ---
 
@@ -61,100 +104,109 @@ No hay tests configurados. Los errores de TypeScript y ESLint no bloquean el bui
 | campo | tipo | notas |
 |-------|------|-------|
 | id | uuid PK | |
+| negocio_id | text | aísla por negocio |
 | nombre | text | |
-| telefono | text | unico, se usa para deduplicar |
+| telefono | text | único por negocio |
+
+**Constraint:** `UNIQUE (negocio_id, telefono)`
 
 ### `simuladores`
 | campo | tipo |
 |-------|------|
-| id | int |
+| id | int PK |
 | nombre | text |
 
 ### `dias_bloqueados`
 | campo | tipo | notas |
 |-------|------|-------|
-| fecha | date PK | |
-| motivo | text | nullable (ej: "Feriado", "Mantenimiento") |
+| negocio_id | text | |
+| fecha | date | |
+| motivo | text | nullable |
+
+**PK:** `(negocio_id, fecha)`
+
+### `horarios_bloqueados`
+| campo | tipo | notas |
+|-------|------|-------|
+| negocio_id | text | |
+| fecha | date | |
+| hora | time | |
+
+**Constraint:** `UNIQUE (negocio_id, fecha, hora)`
 
 ### `turnos`
 | campo | tipo | notas |
 |-------|------|-------|
 | id | uuid PK | |
+| negocio_id | text | aísla por negocio |
 | simulador_id | int FK | |
 | cliente_id | uuid FK | |
 | fecha | date | |
 | hora_inicio | time | |
-| hora_fin | time | calculada en cliente |
+| hora_fin | time | se guarda en el insert, calculada con negocio.duracionMinutos |
 | cancel_token | uuid | generado por Supabase, para cancelar sin login |
 | created_at | timestamptz | |
 
-**Constraint:** `UNIQUE (simulador_id, fecha, hora_inicio)` — evita doble reserva del mismo slot.
+**Constraint:** `UNIQUE (negocio_id, simulador_id, fecha, hora_inicio)`
 
-RLS deshabilitado (misma anon key que el resto).
+**Sobre hora_fin:** se guarda en el momento de la reserva usando `negocio.duracionMinutos`. Si en el futuro se cambia la duración del negocio, los turnos viejos conservan la hora_fin original — eso es intencional.
+
+RLS deshabilitado (misma anon key para todos).
 
 ---
 
 ## Rutas
 
-| Ruta | Descripcion |
+| Ruta | Descripción |
 |------|-------------|
-| `/` | Landing con boton Reservar ahora |
-| `/reservar` | Flujo principal: fecha -> hora -> recursos -> datos -> confirmar |
-| `/reservar/[id]` | Flujo alternativo: un recurso especifico, hasta 4 horas |
-| `/confirmado` | Resumen con links de cancelacion por recurso + boton WhatsApp |
-| `/cancelar/[token]` | Cancelacion self-service, sin login |
+| `/` | Landing con botón Reservar ahora |
+| `/reservar` | Flujo principal: fecha → hora → recursos → datos → confirmar |
+| `/reservar/[id]` | Flujo alternativo: un recurso específico, hasta 4 horas |
+| `/confirmado` | Resumen con links de cancelación por recurso + botón WhatsApp |
+| `/cancelar/[token]` | Cancelación self-service, sin login |
 | `/cancelar` | Redirige a /mis-turnos |
-| `/mis-turnos` | Buscar turnos propios por telefono |
-| `/admin` | Panel con login por contrasena, grilla y tabla por fecha |
-| `/api/notificar` | POST server-side -> Twilio WhatsApp (hasta 2 numeros) |
+| `/mis-turnos` | Buscar turnos propios por teléfono |
+| `/admin` | Panel con login por contraseña, grilla y tabla por fecha |
+| `/api/notificar` | POST server-side → Twilio WhatsApp (hasta 2 números) |
 
 ---
 
-## Decisiones tecnicas importantes
+## Decisiones técnicas importantes
 
 ### Multi-negocio
-Cada negocio tiene un archivo en `config/` con tipo `NegocioConfig`. La config activa se selecciona por `NEXT_PUBLIC_NEGOCIO_ID` (default: `sim-turnos`). Un solo repo, multiples deployments en Vercel.
-
-### NegocioConfig — campos clave (`lib/config.ts`)
-- `horario.inicioMin` / `finMin` — minutos desde medianoche (ej: 15*60=900). Soporta cruce de medianoche (finMin < inicioMin).
-- `horario.intervaloMinutos` — 30 o 60
-- `diasHabiles` — array de dias (0=Dom...6=Sab), `undefined` = todos los dias
-- `recursoNombre` / `recursoNombrePlural` — singular y plural del recurso (ej: "Simulador"/"Simuladores")
-- `adminPassword` — contrasena en plaintext (deuda tecnica: visible en el bundle JS)
+Cada negocio tiene un archivo en `config/` con tipo `NegocioConfig`. La config activa se selecciona por `NEXT_PUBLIC_NEGOCIO_ID` (default: `sim-turnos`). Un solo repo, múltiples deployments en Vercel, una sola BD Supabase.
 
 ### Helpers de horario (`lib/config.ts`)
 - `generarHorarios()` — crea array de slots desde apertura/cierre
-- `formatHora()` — convierte minutos desde medianoche a HH:MM, maneja horarios del dia siguiente
-- `horaValida()` — bloquea slots pasados en el dia actual, maneja cruce de medianoche
-- `esDiaHabil()` — verifica si la fecha cae en los dias habiles del negocio
+- `formatHora()` — convierte minutos desde medianoche a HH:MM, maneja horarios del día siguiente
+- `horaValida()` — bloquea slots pasados del día actual, maneja cruce de medianoche
+- `esDiaHabil()` — verifica si la fecha cae en los días hábiles del negocio
 - `calcularUmbral()` — detecta si el horario cruza la medianoche
 
 ### Notificaciones server-side (Twilio)
-Las credenciales de Twilio viven en variables de entorno del servidor. La llamada se hace desde `app/api/notificar/route.ts` con `Promise.all` para enviar a los dos numeros en paralelo. Nunca se exponen al browser.
-
-Twilio sandbox: cada numero receptor debe mandar `join <palabra>` al +14155238886 una sola vez.
+Las credenciales de Twilio viven en variables de entorno del servidor. La llamada se hace desde `app/api/notificar/route.ts` con `Promise.all` para enviar a los dos números en paralelo. Nunca se exponen al browser.
 
 ### cancel_token en lugar de auth
-Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login. Los links de cancelacion se muestran en `/confirmado` y se envian por WhatsApp.
+Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login. Los links de cancelación se muestran en `/confirmado` y se envían por WhatsApp.
 
-### Deduplicacion de clientes por telefono
-Antes de insertar un turno se busca si ya existe un cliente con ese telefono. Si existe se reutiliza el id **y se actualiza el nombre** con el valor ingresado en el formulario. La query usa `.single()` que devuelve 406 si no encuentra fila — esto es normal y el codigo lo maneja.
+### Deduplicación de clientes por teléfono
+Antes de insertar un turno se busca si ya existe un cliente con ese teléfono y negocio_id. Si existe se reutiliza el id y se actualiza el nombre. La query usa `.single()` que devuelve 406 si no encuentra fila — esto es normal y el código lo maneja.
 
 ### Supabase client tolerante a build time
 `lib/supabase.js` usa fallback `|| placeholder` en las vars para evitar crash durante el prerender de Next.js en Vercel.
 
 ### Timezone
-`created_at` en el admin resta 3 hs hardcodeado (UTC-3). No hay manejo explicito de timezone.
+`created_at` en el admin resta 3 hs hardcodeado (UTC-3). No hay manejo explícito de timezone.
 
 ---
 
 ## Variables de entorno
 
 ```bash
-# Negocio (cual config cargar)
-NEXT_PUBLIC_NEGOCIO_ID=sim-turnos   # o prgrssv, etc.
+# Negocio (cuál config cargar)
+NEXT_PUBLIC_NEGOCIO_ID=sim-turnos   # o prgrssv, lacancha, etc.
 
-# Supabase
+# Supabase (misma instancia para todos los negocios)
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 
@@ -162,35 +214,26 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 TWILIO_ACCOUNT_SID=AC...
 TWILIO_AUTH_TOKEN=...
 TWILIO_FROM=whatsapp:+14155238886
-TWILIO_TO_1=whatsapp:+549XXXXXXXXXX   # numero principal (ej: dueno del negocio)
-TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # numero secundario (opcional)
+TWILIO_TO_1=whatsapp:+549XXXXXXXXXX   # número principal
+TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
 ```
 
 ---
 
-## Agregar un negocio nuevo
+## Deuda técnica
 
-1. Crear `config/nuevo-negocio.ts` con tipo `NegocioConfig`
-2. Registrarlo en `config/index.ts`
-3. Crear proyecto en Supabase con el mismo schema
-4. Crear deployment en Vercel con `NEXT_PUBLIC_NEGOCIO_ID=nuevo-negocio` y las demas vars
-
----
-
-## Deuda tecnica
-
-- **Auth admin real** — la contrasena esta en el bundle del cliente (visible en JS)
+- **Auth admin real** — la contraseña está en el bundle del cliente (visible en JS)
 - **RLS en Supabase** — la anon key tiene acceso total a todas las tablas
-- **Limite por cliente** — un mismo telefono puede reservar todos los recursos
-- **Timezone explicita** — `created_at` en admin resta 3 hs hardcodeado (UTC-3)
-- **Pagina 404 personalizada**
-- **Base de datos compartida** — hoy cada negocio necesita su propia instancia de Supabase (limite 2 gratis). Antes del cliente 3 conviene migrar a una BD unica con columna `negocio_id`
-- **Twilio produccion** — hoy usa sandbox (requiere join previo). Para clientes reales hay que aprobar WhatsApp Business Account en Twilio
+- **Límite por cliente** — un mismo teléfono puede reservar todos los recursos
+- **Timezone explícita** — `created_at` en admin resta 3 hs hardcodeado (UTC-3)
+- **Página 404 personalizada**
+- **Bug admin (baja prioridad)** — al borrar un turno desde la vista tabla cambia a vista grilla
+- **Twilio producción** — WhatsApp Business pendiente aprobación Meta
 
 ---
 
-## Activacion Twilio sandbox (por numero nuevo)
+## Activación Twilio sandbox (por número nuevo)
 
-1. Desde el telefono, mandar por WhatsApp al `+1 415 523 8886`: `join <palabra-del-sandbox>`
-2. La palabra se encuentra en Twilio -> Messaging -> Try it out -> Send a WhatsApp message
-3. El numero queda habilitado para recibir mensajes del sandbox indefinidamente
+1. Desde el teléfono, mandar por WhatsApp al `+1 415 523 8886`: `join <palabra-del-sandbox>`
+2. La palabra se encuentra en Twilio → Messaging → Try it out → Send a WhatsApp message
+3. El número queda habilitado para recibir mensajes del sandbox indefinidamente

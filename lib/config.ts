@@ -13,6 +13,10 @@ export type NegocioConfig = {
   recursoNombrePlural: string // "Simuladores", "Canchas", "Peluqueros"
   duracionMinutos: number
   adminPassword: string
+  emoji?: string              // emoji representativo del recurso
+  seleccionSimple?: boolean   // true = solo se puede elegir 1 recurso por turno
+  bgColor?: string            // color de fondo, default '#000000'
+  accentColor?: string        // color de acento, default 'red'
 }
 
 /** Genera el array de horarios a partir del rango del negocio.

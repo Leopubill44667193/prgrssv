@@ -17,6 +17,8 @@ const config: NegocioConfig = {
   recursoNombrePlural: 'Peluqueros',
   duracionMinutos: 30,
   adminPassword: 'progressevi',
+  emoji: '✂️',
+  seleccionSimple: true,
 }
 
 export default config
