@@ -30,6 +30,7 @@ export default function MisTurnosPage() {
       .from('clientes')
       .select('id, nombre')
       .eq('telefono', telefono)
+      .eq('negocio_id', negocio.id)
       .single()
 
     if (!cliente) {
