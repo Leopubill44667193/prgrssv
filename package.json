@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:sim": "NEXT_PUBLIC_NEGOCIO_ID=sim-turnos next dev",
+    "dev:prgrssv": "NEXT_PUBLIC_NEGOCIO_ID=prgrssv next dev",
+    "dev:lacancha": "NEXT_PUBLIC_NEGOCIO_ID=lacancha next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
