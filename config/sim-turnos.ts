@@ -23,6 +23,8 @@ const config: NegocioConfig = {
   adminPassword: 'racing2025',
   tema: { accent: '#ef4444', accentHover: '#dc2626', bg: '#000000' },
   features: { multiRecurso: true },
+  cancelacionMinHs: 3,
+  whatsappNegocio: '5492475437017',
 }
 
 export default config

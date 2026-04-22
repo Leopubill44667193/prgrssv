@@ -23,6 +23,8 @@ const config: NegocioConfig = {
   tema: { accent: '#eab308', accentHover: '#ca8a04', bg: '#000000' },
   features: { multiRecurso: false },
   anticipacionMinHs: 5,
+  cancelacionMinHs: 2,
+  whatsappNegocio: '5492475410489',
 }
 
 export default config
