@@ -32,6 +32,8 @@ export type NegocioConfig = {
     confirmacionCliente?: boolean
   }
   anticipacionMinHs?: number    // bloquea slots con menos de N horas de anticipación
+  cancelacionMinHs?: number     // horas mínimas de anticipación para cancelar sin contactar al local
+  whatsappNegocio?: string      // número de WhatsApp del local sin +, ej: "5492474470920"
 }
 
 /** Genera el array de horarios a partir del rango del negocio.

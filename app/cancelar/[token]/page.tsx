@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
@@ -21,6 +21,7 @@ export default function CancelarTokenPage() {
   const { token } = useParams<{ token: string }>()
   const [turno, setTurno] = useState<TurnoDetalle | null>(null)
   const [estado, setEstado] = useState<'cargando' | 'encontrado' | 'noEncontrado' | 'cancelando' | 'cancelado'>('cargando')
+  const [ahora] = useState(() => new Date())
 
   useEffect(() => {
     async function cargar() {
@@ -62,6 +63,12 @@ export default function CancelarTokenPage() {
     setEstado('cancelado')
   }
 
+  const dentroDeVentana = useMemo(() => {
+    if (!turno || !negocio.cancelacionMinHs) return false
+    const slotMs = new Date(`${turno.fecha}T${turno.hora_inicio}`).getTime()
+    return slotMs <= ahora.getTime() + negocio.cancelacionMinHs * 60 * 60 * 1000
+  }, [turno, ahora])
+
   function formatearFecha(fecha: string) {
     return new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', {
       weekday: 'long', day: 'numeric', month: 'long'
@@ -88,35 +95,51 @@ export default function CancelarTokenPage() {
 
       {(estado === 'encontrado' || estado === 'cancelando') && turno && (
         <div>
-          <div className="border border-white/10 rounded-2xl p-6 mb-8">
-            <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Detalle del turno</p>
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">Cliente</p>
-                <p className="font-bold">{turno.cliente.nombre}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">Fecha</p>
-                <p className="font-bold capitalize">{formatearFecha(turno.fecha)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">Horario</p>
-                <p className="font-bold">{turno.hora_inicio.slice(0, 5)} hs</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">{negocio.recursoNombre}</p>
-                <p className="font-bold">{negocio.recursoNombre} {turno.simulador_id}</p>
+            <div className="border border-white/10 rounded-2xl p-6 mb-8">
+              <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Detalle del turno</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">Cliente</p>
+                  <p className="font-bold">{turno.cliente.nombre}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">Fecha</p>
+                  <p className="font-bold capitalize">{formatearFecha(turno.fecha)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">Horario</p>
+                  <p className="font-bold">{turno.hora_inicio.slice(0, 5)} hs</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 uppercase tracking-widest mb-0.5">{negocio.recursoNombre}</p>
+                  <p className="font-bold">{negocio.recursoNombre} {turno.simulador_id}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={confirmarCancelacion}
-            disabled={estado === 'cancelando'}
-            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm"
-          >
-            {estado === 'cancelando' ? 'Cancelando...' : 'Confirmar cancelación'}
-          </button>
+            {dentroDeVentana ? (
+              <div className="text-center">
+                <p className="text-gray-400 text-sm mb-6">
+                  Para cancelar con menos de {negocio.cancelacionMinHs} hs de anticipación contactá al local
+                </p>
+                <a
+                  href={`https://wa.me/${negocio.whatsappNegocio}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-block bg-[#25D366] hover:bg-[#1ebe5d] text-white py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm text-center"
+                >
+                  Contactar por WhatsApp
+                </a>
+              </div>
+            ) : (
+              <button
+                onClick={confirmarCancelacion}
+                disabled={estado === 'cancelando'}
+                className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm"
+              >
+                {estado === 'cancelando' ? 'Cancelando...' : 'Confirmar cancelación'}
+              </button>
+            )}
         </div>
       )}
 
