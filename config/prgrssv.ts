@@ -10,7 +10,7 @@ const config: NegocioConfig = {
     finMin: 19 * 60 + 30,       // 19:30 (último turno a las 19:00)
     intervaloMinutos: 30,
   },
-  diasHabiles: [1, 2, 3, 4, 5], // Lunes a Viernes
+  diasHabiles: [2, 3, 4, 5],    // Martes a Viernes
   recursos: [
     { id: 1, nombre: 'Eugenio Dorrigo' },
   ],
@@ -22,6 +22,7 @@ const config: NegocioConfig = {
   seleccionSimple: true,
   tema: { accent: '#eab308', accentHover: '#ca8a04', bg: '#000000' },
   features: { multiRecurso: false },
+  anticipacionMinHs: 5,
 }
 
 export default config

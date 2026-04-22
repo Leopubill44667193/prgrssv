@@ -149,7 +149,7 @@ export default function ReservarIdPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className="grid grid-cols-4 gap-2">
               {HORARIOS.map((hora) => {
-                const ocupado = horasOcupadas.includes(hora) || !horaValida(hora, fecha, UMBRAL) || horariosBloqueados.includes(hora)
+                const ocupado = horasOcupadas.includes(hora) || !horaValida(hora, fecha, UMBRAL, negocio.anticipacionMinHs) || horariosBloqueados.includes(hora)
                 const seleccionado = horasSeleccionadas.includes(hora)
                 const lleno = !seleccionado && horasSeleccionadas.length >= 4
                 return (

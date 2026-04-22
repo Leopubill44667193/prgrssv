@@ -31,6 +31,7 @@ export type NegocioConfig = {
     recordatorio24hs?: boolean
     confirmacionCliente?: boolean
   }
+  anticipacionMinHs?: number    // bloquea slots con menos de N horas de anticipación
 }
 
 /** Genera el array de horarios a partir del rango del negocio.
@@ -70,13 +71,24 @@ export function calcularUmbral(finMin: number): number {
 }
 
 /** Determina si un slot horario es válido para reservar en la fecha dada.
- *  Bloquea slots ya pasados del día actual, con soporte de 30 min y cruce de medianoche. */
-export function horaValida(hora: string, fecha: string, umbral: number): boolean {
-  if (fecha !== new Date().toLocaleDateString('en-CA')) return true
+ *  Bloquea slots ya pasados del día actual, con soporte de 30 min y cruce de medianoche.
+ *  Si anticipacionMinHs está definido, bloquea slots dentro de las próximas N horas (incluso en días futuros). */
+export function horaValida(hora: string, fecha: string, umbral: number, anticipacionMinHs?: number): boolean {
   const ahora = new Date()
-  const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes()
+  const hoy = ahora.toLocaleDateString('en-CA')
   const [h, m] = hora.split(':').map(Number)
   const minutosSlot = h * 60 + m
+
+  if (anticipacionMinHs !== undefined) {
+    // Construimos el datetime del slot y comparamos contra ahora + anticipación
+    const slotDate = new Date(`${fecha}T${hora}:00`)
+    const limiteMs = ahora.getTime() + anticipacionMinHs * 60 * 60 * 1000
+    if (slotDate.getTime() <= limiteMs) return false
+  }
+
+  if (fecha !== hoy) return true
+
+  const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes()
 
   if (umbral === 0) return minutosSlot > minutosActuales
 

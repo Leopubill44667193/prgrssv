@@ -170,7 +170,7 @@ export default function ReservarPage() {
             <div className="grid grid-cols-4 gap-2">
               {HORARIOS.map((hora) => {
                 const disp = disponiblesEnHora(hora)
-                const pasado = !horaValida(hora, fecha, UMBRAL)
+                const pasado = !horaValida(hora, fecha, UMBRAL, negocio.anticipacionMinHs)
                 const bloqueado = horariosBloqueados.includes(hora)
                 const lleno = disp === 0 || pasado || bloqueado
                 const seleccionado = horaSeleccionada === hora
