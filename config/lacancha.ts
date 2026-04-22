@@ -3,7 +3,7 @@ import type { NegocioConfig } from '@/lib/config'
 const config: NegocioConfig = {
   id: 'lacancha',
   nombre: 'La Cancha Padel',
-  nombreDisplay: { parte1: 'La Cancha', parte2: ' Padel' },
+  nombreDisplay: { parte1: 'La Cancha Padel' },
   direccion: 'Av. 20 de Diciembre 130 · Rojas',
   horario: {
     inicioMin: 9 * 60,
@@ -14,8 +14,7 @@ const config: NegocioConfig = {
     { id: 1, nombre: 'Cancha 1' },
     { id: 2, nombre: 'Cancha 2' },
     { id: 3, nombre: 'Cancha 3' },
-    { id: 4, nombre: 'Cancha 4' },
-    { id: 5, nombre: 'Cancha 5 (Blindex)' },
+    { id: 4, nombre: 'Cancha 4 (Blindex)' },
   ],
   recursoNombre: 'Cancha',
   recursoNombrePlural: 'Canchas',
