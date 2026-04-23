@@ -111,6 +111,8 @@ No hay tests configurados y no se deben agregar salvo que se pida explícitament
     recordatorio24hs?: boolean    // recordatorio 24hs antes (no implementado)
     confirmacionCliente?: boolean // confirmación al cliente por WhatsApp (no implementado)
   }
+  fontTitle?: string              // fuente para títulos, cargada desde Google Fonts vía next/font. Ej: 'Bebas Neue'
+  bgTexture?: 'grid'              // textura de fondo sutil. 'grid' = grilla verde semitransparente
 }
 ```
 
@@ -213,6 +215,10 @@ Cada negocio tiene un archivo en `config/` con tipo `NegocioConfig`. La config a
 
 ### Sistema de temas
 Los colores se definen en `config/<negocio>.ts` como `tema: { accent, accentHover, bg }` con hex directos. `app/layout.tsx` los inyecta como CSS variables `:root { --accent, --accent-hover, --bg }`. Sin `tema` definido usa rojo/negro como default.
+
+`fontTitle` carga la fuente indicada desde Google Fonts vía `next/font` (self-hosted) e inyecta `--font-title` como CSS variable. El hero de `app/page.tsx` la usa via `font-family: var(--font-title, inherit)` — sin efecto en negocios que no la definen. Cuando se define, también se sobreescribe `font-weight` a normal (necesario para fuentes display de un solo peso como Bebas Neue).
+
+`bgTexture: 'grid'` agrega un `<div>` fijo con `z-index: -10` en el body que muestra una grilla semitransparente usando el color de acento del negocio.
 
 ### Helpers de horario (`lib/config.ts`)
 - `generarHorarios()` — crea array de slots desde apertura/cierre
