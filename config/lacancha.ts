@@ -26,6 +26,8 @@ const config: NegocioConfig = {
   features: { multiRecurso: true },
   cancelacionMinHs: 3,
   whatsappNegocio: '5492474470920',
+  fontTitle: 'Bebas Neue',
+  bgTexture: 'grid',
 }
 
 export default config

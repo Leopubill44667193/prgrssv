@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import { negocio } from "@/config";
 
@@ -15,6 +15,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  variable: "--font-title",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -38,12 +45,25 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${negocio.fontTitle ? bebasNeue.variable : ""} h-full antialiased`}
     >
       <head>
-        <style>{`:root { --accent: ${accent}; --accent-hover: ${accentHover}; --bg: ${bg}; }`}</style>
+        <style>{`:root { --accent: ${accent}; --accent-hover: ${accentHover}; --bg: ${bg};${negocio.fontTitle ? ` --font-title: '${negocio.fontTitle}', sans-serif;` : ""} }`}</style>
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {negocio.bgTexture === "grid" && (
+          <div
+            aria-hidden="true"
+            className="fixed inset-0 pointer-events-none -z-10"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(74,222,128,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,.05) 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+          />
+        )}
+        {children}
+      </body>
     </html>
   );
 }

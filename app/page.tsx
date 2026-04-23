@@ -23,10 +23,20 @@ export default function Home() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-8 py-20 text-center">
-        <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-6">Reservas en linea</p>
-        <h2 className="text-6xl md:text-7xl font-black uppercase tracking-tight leading-none mb-4">
-          Reserva tu<br />
-          <span className="text-[var(--accent)]">turno</span>
+        <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-6 flex items-center justify-center gap-3">
+          <span className="inline-block w-6 h-px bg-[var(--accent)]" />
+          Reservas en linea
+          <span className="inline-block w-6 h-px bg-[var(--accent)]" />
+        </p>
+        <h2
+          className="text-7xl md:text-8xl font-black uppercase tracking-tight leading-none mb-4"
+          style={{
+            fontFamily: "var(--font-title, inherit)",
+            ...(negocio.fontTitle && { fontWeight: "normal", letterSpacing: "0.04em" }),
+          }}
+        >
+          Reservá tu<br />
+          <span className="text-[var(--accent)]">{negocio.recursoNombre.toLowerCase()}</span>
         </h2>
         <p className="text-gray-600 text-sm tracking-wide mb-12">
           {negocio.recursos.length} {negocio.recursoNombrePlural.toLowerCase()} · Turnos de {negocio.duracionMinutos} min · Reservá tu {negocio.recursoNombre.toLowerCase()}
