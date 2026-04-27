@@ -48,6 +48,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${negocio.fontTitle ? bebasNeue.variable : ""} h-full antialiased`}
     >
       <head>
+        <meta name="facebook-domain-verification" content="tr0qkmbqr9zrskrr2i1togkqe9qaq5" />
         <style>{`:root { --accent: ${accent}; --accent-hover: ${accentHover}; --bg: ${bg};${negocio.fontTitle ? ` --font-title: '${negocio.fontTitle}', sans-serif;` : ""} }`}</style>
       </head>
       <body className="min-h-full flex flex-col">
