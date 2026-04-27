@@ -264,6 +264,28 @@ TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
 
 ---
 
+## Estado actual WhatsApp / Twilio (2026-04-27)
+
+| Negocio | TWILIO_FROM | Estado |
+|---------|-------------|--------|
+| `lacancha` | `whatsapp:+15559391060` | WhatsApp Business API activo, número Online |
+| `sim-turnos` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar) |
+| `prgrssv` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar) |
+
+**Dominio:** `reservaturnos.com.ar` comprado en Donweb, apuntado a Vercel proyecto lacancha. Verificado en Meta Business (aprobación pendiente ~2 días hábiles).
+
+### Pendiente cuando Meta apruebe
+
+1. Crear templates en Twilio Content Template Builder:
+   - `confirmacion_turno` — variables: negocio, fecha, hora, recurso, nombre, teléfono
+   - `cancelacion_turno` — variables: nombre, fecha, hora, recurso, negocio
+2. Modificar `app/api/notificar/route.ts` para usar Content SID en lugar de texto libre
+3. Agregar `TWILIO_CONTENT_SID_RESERVA` y `TWILIO_CONTENT_SID_CANCELACION` en los tres proyectos de Vercel
+4. Actualizar `TWILIO_FROM=whatsapp:+15559391060` en sim-turnos y prgrssv
+5. Probar end-to-end en lacancha con número real
+
+---
+
 ## Deuda técnica
 
 - **Auth admin real** — la contraseña está en el bundle del cliente (visible en JS)
