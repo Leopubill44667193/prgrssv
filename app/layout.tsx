@@ -64,6 +64,9 @@ export default function RootLayout({
           />
         )}
         {children}
+        <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', opacity: 0.4 }}>
+          © {new Date().getFullYear()} Leandro Pubill
+        </footer>
       </body>
     </html>
   );
