@@ -3,7 +3,7 @@ import type { NegocioConfig } from '@/lib/config'
 const config: NegocioConfig = {
   id: 'sim-turnos',
   nombre: 'OC.Hobbies.Racing',
-  nombreDisplay: { parte1: 'OC.', parte2: 'Hobbies.Racing' },
+  nombreDisplay: { parte1: 'OC.Hobbies.Racing' },
   direccion: 'Av. 3 de Febrero 283 · Rojas',
   horario: {
     inicioMin: 15 * 60,       // 15:00

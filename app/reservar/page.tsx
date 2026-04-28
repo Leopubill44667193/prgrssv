@@ -122,7 +122,7 @@ export default function ReservarPage() {
         <div>
           <h1 className="text-xl font-black tracking-widest uppercase">
             <span className="text-[var(--accent)]">{negocio.nombreDisplay?.parte1 ?? negocio.nombre.split('.')[0] + '.'}</span>
-            {negocio.nombreDisplay?.parte2 ?? negocio.nombre.split('.').slice(1).join('.')}
+            {negocio.nombreDisplay ? negocio.nombreDisplay.parte2 : negocio.nombre.split('.').slice(1).join('.')}
           </h1>
           <p className="text-xs text-gray-600 tracking-wider uppercase mt-0.5">{negocio.direccion}</p>
         </div>

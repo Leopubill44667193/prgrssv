@@ -286,15 +286,24 @@ TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
 
 ---
 
-## Deuda técnica
+## Features pendientes
 
-- **Auth admin real** — la contraseña está en el bundle del cliente (visible en JS)
-- **RLS en Supabase** — la anon key tiene acceso total a todas las tablas
-- **Límite por cliente** — un mismo teléfono puede reservar todos los recursos
-- **Timezone explícita** — `created_at` en admin resta 3 hs hardcodeado (UTC-3)
-- **Página 404 personalizada**
-- **Bug admin (baja prioridad)** — al borrar un turno desde la vista tabla cambia a vista grilla
-- **Twilio producción** — WhatsApp Business pendiente aprobación Meta
+- **`bgImage` y `bgImageOpacity` en `NegocioConfig`** — imagen de fondo configurable por negocio. prgrssv ya la tiene hardcodeada en `app/confirmado/page.tsx`, pendiente hacerla configurable desde config. Extender a más páginas: reservar, landing.
+- **Límite de reservas por cliente** — campo `limites` en `NegocioConfig` con `maxTurnosActivos`, `maxRecursosMismaHora`, `maxTurnosPorDia`. Validar en Server Action del insert. Lógica por negocio: sim-turnos permite multi-recurso misma hora, lacancha no.
+- **Recordatorio 1hs antes por WhatsApp** — requiere cron job, no puede dispararse desde el flujo de reserva.
+- **`app/reservar/[id]/page.tsx`** — todavía tiene `<input type="date">` nativo, pendiente migrar a `CalendarioInline`.
+
+## Infraestructura pendiente
+
+- **WhatsApp Business API** — esperando monotributo + aprobación Meta. Templates diseñados: confirmación (admin + cliente), cancelación (admin + cliente), recordatorio 1hs (solo cliente).
+- **Mercado Pago / seña** — Checkout Pro, requiere monotributo.
+- **Auth admin server-side** — contraseña actualmente en bundle del cliente (visible en JS).
+- **RLS en Supabase** — anon key tiene acceso total a todas las tablas.
+- **Timezone explícita en admin** — `created_at` resta 3hs hardcodeado (UTC-3).
+
+## Bugs conocidos
+
+- **Bug admin (baja prioridad)** — al borrar un turno desde la vista tabla cambia a vista grilla.
 
 ---
 
