@@ -5,13 +5,10 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { negocio } from '@/config'
 import { generarHorarios, calcularUmbral, horaValida, esDiaHabil } from '@/lib/config'
+import CalendarioInline from '@/components/CalendarioInline'
 
 const HORARIOS = generarHorarios(negocio.horario.inicioMin, negocio.horario.finMin, negocio.horario.intervaloMinutos)
 const UMBRAL = calcularUmbral(negocio.horario.finMin)
-
-function fechaMinima() {
-  return new Date().toLocaleDateString('en-CA')
-}
 
 export default function ReservarIdPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -120,7 +117,11 @@ export default function ReservarIdPage({ params }: { params: Promise<{ id: strin
 
         <div className="mb-8">
           <label className="block text-xs uppercase tracking-widest text-gray-500 mb-3">Fecha</label>
-          <input type="date" className="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-white focus:border-[var(--accent)] outline-none text-sm" value={fecha} min={fechaMinima()} onChange={(e) => setFecha(e.target.value)} />
+          <CalendarioInline
+            value={fecha}
+            onChange={setFecha}
+            diasHabiles={negocio.diasHabiles}
+          />
         </div>
 
         {fecha && diaNoHabil && (
