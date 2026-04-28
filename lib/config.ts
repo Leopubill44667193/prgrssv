@@ -79,7 +79,7 @@ export function calcularUmbral(finMin: number): number {
  *  Si anticipacionMinHs está definido, bloquea slots dentro de las próximas N horas (incluso en días futuros). */
 export function horaValida(hora: string, fecha: string, umbral: number, anticipacionMinHs?: number): boolean {
   const ahora = new Date()
-  const hoy = ahora.toLocaleDateString('en-CA')
+  const hoy = ahora.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
   const [h, m] = hora.split(':').map(Number)
   const minutosSlot = h * 60 + m
 
@@ -92,7 +92,13 @@ export function horaValida(hora: string, fecha: string, umbral: number, anticipa
 
   if (fecha !== hoy) return true
 
-  const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes()
+  const [horaAR, minAR] = ahora.toLocaleTimeString('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).split(':').map(Number)
+  const minutosActuales = horaAR * 60 + minAR
 
   if (umbral === 0) return minutosSlot > minutosActuales
 
