@@ -96,7 +96,7 @@ export default function ReservarIdPage({ params }: { params: Promise<{ id: strin
   async function notificarReserva(nombre: string, telefono: string, fecha: string, horas: string[], simId: string) {
     const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
     const horasTexto = horas.length === 1 ? horas[0] + ' hs' : horas.join(', ') + ' hs'
-    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${horasTexto}\n${negocio.emoji ?? '🏎'} ${negocio.recursos.find(r => r.id === Number(simId))?.nombre ?? negocio.recursoNombre + ' ' + simId}\n👤 ${nombre}\n📱 ${telefono}`
+    const mensaje = `✅ Nueva reserva\n👤 ${nombre}\n📱 ${telefono}\n📅 ${fechaFmt}\n⏰ ${horasTexto}\n${negocio.emoji ?? '🏎'} ${negocio.recursos.find(r => r.id === Number(simId))?.nombre ?? negocio.recursoNombre + ' ' + simId}`
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
 

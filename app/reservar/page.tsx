@@ -5,14 +5,12 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { negocio } from '@/config'
 import { generarHorarios, calcularUmbral, horaValida, esDiaHabil } from '@/lib/config'
+import CalendarioInline from '@/components/CalendarioInline'
 
 const HORARIOS = generarHorarios(negocio.horario.inicioMin, negocio.horario.finMin, negocio.horario.intervaloMinutos)
 const RECURSOS = negocio.recursos
 const UMBRAL = calcularUmbral(negocio.horario.finMin)
 
-function fechaMinima() {
-  return new Date().toLocaleDateString('en-CA')
-}
 
 export default function ReservarPage() {
   const router = useRouter()
@@ -111,7 +109,7 @@ export default function ReservarPage() {
     const recursoTexto = recursos.length === 1
       ? `${negocio.recursoNombre} ${recursos[0]}`
       : `${negocio.recursoNombrePlural} ${recursos.join(', ')}`
-    const mensaje = `✅ Nueva reserva\n📅 ${fechaFmt}\n⏰ ${hora} hs\n${negocio.emoji ?? '🏎'} ${recursoTexto}\n👤 ${nombre}\n📱 ${telefono}`
+    const mensaje = `✅ Nueva reserva\n👤 ${nombre}\n📱 ${telefono}\n📅 ${fechaFmt}\n⏰ ${hora} hs\n${negocio.emoji ?? '🏎'} ${recursoTexto}`
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
   }
 
@@ -138,12 +136,10 @@ export default function ReservarPage() {
         {/* Fecha */}
         <div className="mb-8">
           <label className="block text-xs uppercase tracking-widest text-gray-500 mb-3">Fecha</label>
-          <input
-            type="date"
-            className="bg-white/5 border border-white/10 rounded-xl p-4 w-full text-white focus:border-[var(--accent)] outline-none text-sm"
+          <CalendarioInline
             value={fecha}
-            min={fechaMinima()}
-            onChange={(e) => setFecha(e.target.value)}
+            onChange={setFecha}
+            diasHabiles={negocio.diasHabiles}
           />
         </div>
 

@@ -26,7 +26,19 @@ function Confirmado() {
   )
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-white p-8 max-w-lg mx-auto mt-12">
+    <>
+      {negocio.id === 'prgrssv' && (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 -z-10"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.72)), url(/bg-prgrssv.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+      )}
+      <main className={`min-h-screen text-white p-8 max-w-lg mx-auto mt-12${negocio.id === 'prgrssv' ? '' : ' bg-[var(--bg)]'}`}>
       <div className="text-center mb-10">
         <div className="text-6xl mb-5">{negocio.emoji ?? '🏁'}</div>
         <h1 className="text-4xl font-black uppercase mb-2">
@@ -57,9 +69,7 @@ function Confirmado() {
 
       {/* Links de cancelación */}
       <div className="border border-white/10 rounded-xl p-5 mb-4">
-        <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">
-          {tokens.length === 1 ? 'Link de cancelación' : 'Links de cancelación'}
-        </p>
+        <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Cancelación</p>
         <div className="space-y-3">
           {tokens.map((token, i) => {
             const cancelUrl = origin + '/cancelar/' + token
@@ -68,8 +78,7 @@ function Confirmado() {
                 {tokens.length > 1 && (
                   <p className="text-xs text-gray-700 mb-1 uppercase tracking-widest">{nombreRecurso(simus[i] ?? String(i + 1))}</p>
                 )}
-                <p className="break-all text-xs text-gray-500 mb-1">{cancelUrl}</p>
-                <a href={cancelUrl} className="text-[var(--accent)] text-xs underline">Cancelar este turno</a>
+                <a href={cancelUrl} className="text-[var(--accent)] text-sm font-bold underline underline-offset-2 hover:opacity-80 transition">Cancelar este turno</a>
               </div>
             )
           })}
@@ -90,6 +99,7 @@ function Confirmado() {
         Volver al inicio
       </a>
     </main>
+    </>
   )
 }
 
