@@ -64,6 +64,9 @@ export default function RootLayout({
           />
         )}
         {children}
+        <footer className="py-3 text-center text-xs text-white/20">
+          Desarrollado por Leandro Pubill
+        </footer>
       </body>
     </html>
   );
