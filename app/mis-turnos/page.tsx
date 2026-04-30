@@ -19,6 +19,7 @@ export default function MisTurnosPage() {
   const [turnos, setTurnos] = useState<Turno[] | null>(null)
   const [buscando, setBuscando] = useState(false)
   const [noEncontrado, setNoEncontrado] = useState(false)
+  const [mostrarHistorial, setMostrarHistorial] = useState(false)
 
   async function buscar() {
     setBuscando(true)
@@ -41,13 +42,10 @@ export default function MisTurnosPage() {
 
     setNombre(cliente.nombre)
 
-    const hoy = new Date().toISOString().split('T')[0]
-
     const { data } = await supabase
       .from('turnos')
       .select('id, cancel_token, fecha, hora_inicio, simulador_id')
       .eq('cliente_id', cliente.id)
-      .gte('fecha', hoy)
       .order('fecha')
       .order('hora_inicio')
 
@@ -98,38 +96,71 @@ export default function MisTurnosPage() {
         </div>
       )}
 
-      {nombre && turnos !== null && turnos.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-white font-bold mb-1">Hola, {nombre}</p>
-          <p className="text-gray-500 text-sm mb-6">No tenes turnos proximos.</p>
-          <Link href="/reservar" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
-            Reservar ahora
-          </Link>
-        </div>
-      )}
+      {nombre && turnos !== null && (() => {
+        const hoy = new Date().toISOString().split('T')[0]
+        const turnosFuturos = turnos.filter(t => t.fecha >= hoy)
+        const turnosPasados = turnos.filter(t => t.fecha < hoy).reverse()
 
-      {nombre && turnos && turnos.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs uppercase tracking-widest text-gray-500">Tus proximas reservas</p>
-            <p className="text-sm font-bold text-white">Hola, {nombre}</p>
-          </div>
-          {turnos.map(t => (
-            <div key={t.id} className="border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="font-bold capitalize">{formatearFecha(t.fecha)}</p>
-                <p className="text-gray-400 text-sm">{t.hora_inicio.slice(0, 5)} hs · {negocio.recursoNombre} {t.simulador_id}</p>
+        return (
+          <div>
+            {turnosFuturos.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-white font-bold mb-1">Hola, {nombre}</p>
+                <p className="text-gray-500 text-sm mb-6">No tenes turnos proximos.</p>
+                <Link href="/reservar" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest transition text-sm">
+                  Reservar ahora
+                </Link>
               </div>
-              <Link
-                href={`/cancelar/${t.cancel_token}`}
-                className="bg-white/5 hover:bg-[var(--accent)]/20 border border-white/10 hover:border-[var(--accent)]/50 text-[var(--accent)]/80 hover:text-[var(--accent)] px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-bold transition"
-              >
-                Cancelar
-              </Link>
-            </div>
-          ))}
-        </div>
-      )}
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs uppercase tracking-widest text-gray-500">Tus proximas reservas</p>
+                  <p className="text-sm font-bold text-white">Hola, {nombre}</p>
+                </div>
+                {turnosFuturos.map(t => (
+                  <div key={t.id} className="border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold capitalize">{formatearFecha(t.fecha)}</p>
+                      <p className="text-gray-400 text-sm">{t.hora_inicio.slice(0, 5)} hs · {negocio.recursoNombre} {t.simulador_id}</p>
+                    </div>
+                    <Link
+                      href={`/cancelar/${t.cancel_token}`}
+                      className="bg-white/5 hover:bg-[var(--accent)]/20 border border-white/10 hover:border-[var(--accent)]/50 text-[var(--accent)]/80 hover:text-[var(--accent)] px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-bold transition"
+                    >
+                      Cancelar
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {turnosPasados.length > 0 && (
+              <div className="mt-6">
+                <button
+                  onClick={() => setMostrarHistorial(h => !h)}
+                  className="w-full text-xs uppercase tracking-widest text-gray-600 hover:text-gray-400 transition py-2"
+                >
+                  {mostrarHistorial ? 'Ocultar historial' : 'Ver historial'}
+                </button>
+                {mostrarHistorial && (
+                  <div className="mt-4 space-y-3">
+                    <div className="border-t border-white/5 pt-4">
+                      {turnosPasados.map(t => (
+                        <div key={t.id} className="border border-white/5 rounded-2xl p-4 flex items-center justify-between mb-3 opacity-50">
+                          <div>
+                            <p className="font-bold capitalize">{formatearFecha(t.fecha)}</p>
+                            <p className="text-gray-500 text-sm">{t.hora_inicio.slice(0, 5)} hs · {negocio.recursoNombre} {t.simulador_id}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="mt-12 text-center">
         <Link href="/" className="text-gray-700 hover:text-gray-500 text-xs tracking-widest uppercase underline transition">

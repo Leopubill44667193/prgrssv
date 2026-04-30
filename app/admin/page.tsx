@@ -37,6 +37,7 @@ export default function Admin() {
   const [mostrandoFormBloqueo, setMostrandoFormBloqueo] = useState(false)
   const [motivoInput, setMotivoInput] = useState('')
   const [horariosBloqueados, setHorariosBloqueados] = useState<Set<string>>(new Set())
+  const [mostrarPasados, setMostrarPasados] = useState(false)
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_ok') === '1') setAutenticado(true)
@@ -111,6 +112,10 @@ export default function Admin() {
     if (!error) setTurnos(turnos.filter((t) => t.id !== id))
   }
 
+  function esPasado(fecha: string, hora: string) {
+    return new Date(`${fecha}T${hora}`) < new Date()
+  }
+
   function login() {
     if (inputPass === negocio.adminPassword) {
       sessionStorage.setItem('admin_ok', '1')
@@ -144,6 +149,14 @@ export default function Admin() {
     )
   }
 
+  const turnosFiltrados = (!todasFechas && !mostrarPasados)
+    ? turnos.filter(t => !esPasado(t.fecha, t.hora_fin.slice(0, 5)))
+    : turnos
+
+  const horariosFiltrados = (!todasFechas && !mostrarPasados)
+    ? HORARIOS.filter(hora => !esPasado(fecha, hora))
+    : HORARIOS
+
   const grillaMap: Record<string, Record<number, any>> = {}
   for (const t of turnos) {
     const h = t.hora_inicio.slice(0, 5)
@@ -163,7 +176,7 @@ export default function Admin() {
           <div>
             <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-1">Panel</p>
             <h1 className="text-3xl font-black uppercase">Admin</h1>
-            <p className="text-gray-600 text-sm mt-1 capitalize">{todasFechas ? 'Todas las fechas' : fechaFormateada} · {turnos.length} turnos</p>
+            <p className="text-gray-600 text-sm mt-1 capitalize">{todasFechas ? 'Todas las fechas' : fechaFormateada} · {turnosFiltrados.length} turnos</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <button
@@ -174,6 +187,12 @@ export default function Admin() {
             </button>
             {!todasFechas && (
               <>
+                <button
+                  onClick={() => setMostrarPasados(p => !p)}
+                  className={'px-4 py-2 rounded-xl text-xs uppercase tracking-widest transition border ' + (mostrarPasados ? 'border-white/20 text-white bg-white/10' : 'border-white/10 text-gray-500 hover:text-white')}
+                >
+                  {mostrarPasados ? 'Ocultar historial' : 'Ver historial'}
+                </button>
                 <input
                   type="date"
                   value={fecha}
@@ -235,7 +254,7 @@ export default function Admin() {
 
         {loading ? (
           <p className="text-gray-600 tracking-widest uppercase text-sm">Cargando...</p>
-        ) : turnos.length === 0 && vista === 'tabla' ? (
+        ) : turnosFiltrados.length === 0 && vista === 'tabla' ? (
           <p className="text-gray-600">No hay turnos para este día.</p>
         ) : vista === 'grilla' ? (
           <div className="overflow-x-auto">
@@ -251,7 +270,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {HORARIOS.map((hora) => (
+                {horariosFiltrados.map((hora) => (
                   <tr key={hora} className="border-t border-white/5">
                     <td className="p-3 text-gray-600 text-xs font-mono">{hora}</td>
                     {RECURSOS.map((r) => {
@@ -301,7 +320,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {turnos.map((t) => (
+                {turnosFiltrados.map((t) => (
                   <tr key={t.id} className="border-b border-white/5 hover:bg-white/5 transition">
                     {todasFechas && <td className="p-4 text-gray-400 text-xs">{new Date(t.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</td>}
                     <td className="p-4 font-medium">{RECURSOS.find(r => r.id === t.simulador_id)?.nombre ?? t.simuladores?.nombre}</td>
