@@ -20,6 +20,14 @@ Sistema de reservas online configurable por negocio. Un solo repo, una sola base
 | `prgrssv` | Prgrssv | Zeballos 2239 6A, Rosario | 1 peluquero, 30 min | 09:00-19:30 Lun-Vie |
 | `lacancha` | La Cancha Padel | Av. 20 de Diciembre 130, Rojas | 5 canchas, 90 min | 09:00-00:00 todos los días |
 
+## Dominios
+
+| Subdominio | Negocio |
+|------------|---------|
+| `lacancha.reservaturnos.com.ar` | `lacancha` |
+| `ochobbies.reservaturnos.com.ar` | `sim-turnos` |
+| `prgrssv.reservaturnos.com.ar` | `prgrssv` |
+
 ---
 
 ## Stack
@@ -116,7 +124,7 @@ No hay tests configurados y no se deben agregar salvo que se pida explícitament
 }
 ```
 
-**Sobre `nombreDisplay`:** si no se define, el header hace fallback a `nombre.split('.')` — útil para nombres con puntos como `OC.Hobbies.Racing`. Para nombres sin puntos (ej: `La Cancha Padel`) definirlo siempre para evitar bugs visuales.
+**Sobre `nombreDisplay`:** si no se define, el header hace fallback a `nombre.split('.')` — útil para nombres con puntos como `OC.Hobbies.Racing`. Para nombres sin puntos (ej: `La Cancha Padel`) definirlo siempre para evitar bugs visuales. Si solo se define `parte1` (sin `parte2`), el header muestra únicamente `parte1` en color acento — el fallback de split solo se activa cuando `nombreDisplay` es undefined.
 
 **Sobre `tema`:** los colores se inyectan como CSS variables `--accent`, `--accent-hover`, `--bg` en el layout. Todos los componentes los usan via `var(--accent)` etc.
 
@@ -181,7 +189,7 @@ Sin esto los datos se mezclan entre negocios.
 | cancel_token | uuid | generado por Supabase, para cancelar sin login |
 | created_at | timestamptz | |
 
-**Constraint:** `UNIQUE (negocio_id, simulador_id, fecha, hora_inicio)`
+**Constraint:** `UNIQUE (negocio_id, simulador_id, fecha, hora_inicio)` — **OJO:** el constraint real en la BD se llamaba `turnos_simulador_fecha_hora_unique` y originalmente NO incluía `negocio_id`, lo que causaba colisiones entre negocios. Se corrigió el 2026-04-30 con `ALTER TABLE turnos DROP CONSTRAINT ... / ADD CONSTRAINT ... UNIQUE (negocio_id, simulador_id, fecha, hora_inicio)`.
 
 **Sobre hora_fin:** se guarda en el momento de la reserva usando `negocio.duracionMinutos`. Si en el futuro se cambia la duración del negocio, los turnos viejos conservan la hora_fin original — eso es intencional.
 
@@ -264,7 +272,7 @@ TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
 
 ---
 
-## Estado actual WhatsApp / Twilio (2026-04-27)
+## Estado actual WhatsApp / Twilio (2026-04-28)
 
 | Negocio | TWILIO_FROM | Estado |
 |---------|-------------|--------|
@@ -288,10 +296,9 @@ TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
 
 ## Features pendientes
 
-- **`bgImage` y `bgImageOpacity` en `NegocioConfig`** — imagen de fondo configurable por negocio. prgrssv ya la tiene hardcodeada en `app/confirmado/page.tsx`, pendiente hacerla configurable desde config. Extender a más páginas: reservar, landing.
+- **`bgImage` configurable desde `NegocioConfig`** — prgrssv ya tiene imagen de fondo hardcodeada en `app/confirmado/page.tsx` (condicional por `negocio.id`), pendiente hacerla configurable desde config y extender a más páginas.
 - **Límite de reservas por cliente** — campo `limites` en `NegocioConfig` con `maxTurnosActivos`, `maxRecursosMismaHora`, `maxTurnosPorDia`. Validar en Server Action del insert. Lógica por negocio: sim-turnos permite multi-recurso misma hora, lacancha no.
 - **Recordatorio 1hs antes por WhatsApp** — requiere cron job, no puede dispararse desde el flujo de reserva.
-- **`app/reservar/[id]/page.tsx`** — todavía tiene `<input type="date">` nativo, pendiente migrar a `CalendarioInline`.
 
 ## Infraestructura pendiente
 
@@ -312,3 +319,7 @@ TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
 1. Desde el teléfono, mandar por WhatsApp al `+1 415 523 8886`: `join <palabra-del-sandbox>`
 2. La palabra se encuentra en Twilio → Messaging → Try it out → Send a WhatsApp message
 3. El número queda habilitado para recibir mensajes del sandbox indefinidamente
+
+**Números de sim-turnos que todavía NO hicieron el join:**
+- `+5492475410576`
+- `+5492474442485`

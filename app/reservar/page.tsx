@@ -34,11 +34,15 @@ export default function ReservarPage() {
         return
       }
       setDiaNoHabil(false)
-      const [{ data: turnosData }, { data: bloqueo }, { data: horBloq }] = await Promise.all([
+      const [{ data: turnosData, error: errorFetch }, { data: bloqueo }, { data: horBloq }] = await Promise.all([
         supabase.from('turnos').select('hora_inicio, simulador_id').eq('fecha', fecha).eq('negocio_id', negocio.id),
         supabase.from('dias_bloqueados').select('fecha').eq('fecha', fecha).eq('negocio_id', negocio.id).single(),
         supabase.from('horarios_bloqueados').select('hora').eq('fecha', fecha).eq('negocio_id', negocio.id),
       ])
+      if (errorFetch) {
+        alert('Error al cargar disponibilidad. Recargá la página e intentá de nuevo.\n' + errorFetch.message)
+        return
+      }
       setFechaBloqueada(!!bloqueo)
       setHorariosBloqueados((horBloq ?? []).map((h) => h.hora.slice(0, 5)))
       const mapa: Record<string, number[]> = {}
@@ -86,6 +90,19 @@ export default function ReservarPage() {
     const totalMin = horas * 60 + minutos + negocio.duracionMinutos
     const horaFin = String(Math.floor(totalMin / 60) % 24).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0')
 
+    const { data: ocupados } = await supabase
+      .from('turnos')
+      .select('simulador_id')
+      .eq('negocio_id', negocio.id)
+      .eq('fecha', fecha)
+      .eq('hora_inicio', horaSeleccionada)
+      .in('simulador_id', recursosSeleccionados)
+    if (ocupados && ocupados.length > 0) {
+      alert('Ese horario ya fue reservado por otro. Por favor elegí otro horario.')
+      setCargando(false)
+      return
+    }
+
     const tokens: string[] = []
     for (const simId of recursosSeleccionados) {
       const { data: turnoCreado, error: errorTurno } = await supabase.from('turnos').insert({
@@ -96,7 +113,14 @@ export default function ReservarPage() {
         hora_inicio: horaSeleccionada,
         hora_fin: horaFin,
       }).select('cancel_token').single()
-      if (errorTurno || !turnoCreado) { alert('Error al guardar turno en ' + negocio.recursoNombre + ' ' + simId); setCargando(false); return }
+      if (errorTurno || !turnoCreado) {
+        const msg = errorTurno?.code === '23505'
+          ? 'Ese horario ya fue reservado por otro. Por favor elegí otro horario.'
+          : 'Error al guardar turno en ' + negocio.recursoNombre + ' ' + simId + '\n' + errorTurno?.code + ': ' + errorTurno?.message
+        alert(msg)
+        setCargando(false)
+        return
+      }
       tokens.push(turnoCreado.cancel_token)
     }
 
