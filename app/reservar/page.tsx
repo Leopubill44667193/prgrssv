@@ -86,6 +86,20 @@ export default function ReservarPage() {
       clienteId = nuevoCliente.id
     }
 
+    const { data: turnoExistente } = await supabase
+      .from('turnos')
+      .select('id')
+      .eq('negocio_id', negocio.id)
+      .eq('cliente_id', clienteId)
+      .eq('fecha', fecha)
+      .eq('hora_inicio', horaSeleccionada)
+      .single()
+    if (turnoExistente) {
+      alert('Ya tenés un turno reservado para ese horario.')
+      setCargando(false)
+      return
+    }
+
     const [horas, minutos] = horaSeleccionada.split(':').map(Number)
     const totalMin = horas * 60 + minutos + negocio.duracionMinutos
     const horaFin = String(Math.floor(totalMin / 60) % 24).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0')
