@@ -124,17 +124,29 @@ export default function ReservarPage() {
       tokens.push(turnoCreado.cancel_token)
     }
 
-    await notificarReserva(nombre, telefono, fecha, horaSeleccionada, recursosSeleccionados)
+    await notificarReserva(nombre, telefono, fecha, horaSeleccionada, recursosSeleccionados, tokens)
     router.push(`/confirmado?tokens=${tokens.join(',')}&fecha=${fecha}&hora=${horaSeleccionada}&simus=${recursosSeleccionados.join(',')}`)
   }
 
-  async function notificarReserva(nombre: string, telefono: string, fecha: string, hora: string, recursos: number[]) {
+  async function notificarReserva(nombre: string, telefono: string, fecha: string, hora: string, recursos: number[], tokens: string[]) {
     const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
     const recursoTexto = recursos.length === 1
       ? `${negocio.recursoNombre} ${recursos[0]}`
       : `${negocio.recursoNombrePlural} ${recursos.join(', ')}`
-    const mensaje = `✅ Nueva reserva\n👤 ${nombre}\n📱 ${telefono}\n📅 ${fechaFmt}\n⏰ ${hora} hs\n${negocio.emoji ?? '🏎'} ${recursoTexto}`
-    await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensaje }) })
+    const linkCancelacion = tokens.map(t => `${window.location.origin}/cancelar/${t}`).join('\n')
+    await fetch('/api/notificar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo: 'confirmacion',
+        fechaHora: `${fechaFmt}, ${hora} hs`,
+        turno: `${negocio.emoji} ${recursoTexto}`,
+        nombreCliente: nombre,
+        telefonoCliente: telefono,
+        direccion: negocio.direccion,
+        linkCancelacion,
+      }),
+    })
   }
 
   const ocupadosEnHora = horaSeleccionada ? (ocupadosPorHora[horaSeleccionada] ?? []) : []

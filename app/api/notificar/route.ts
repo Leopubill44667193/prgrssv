@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-async function enviarWhatsApp(to: string, mensaje: string, sid: string, token: string, from: string) {
+async function enviarTemplate(
+  to: string,
+  contentSid: string,
+  contentVariables: Record<string, string>,
+  sid: string,
+  token: string,
+  from: string,
+) {
   const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`
-  const body = new URLSearchParams({ To: to, From: from, Body: mensaje })
+  const body = new URLSearchParams({
+    To: to,
+    From: from,
+    ContentSid: contentSid,
+    ContentVariables: JSON.stringify(contentVariables),
+  })
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -24,26 +36,52 @@ export async function POST(req: NextRequest) {
   const from = process.env.TWILIO_FROM
   const to1 = process.env.TWILIO_TO_1
   const to2 = process.env.TWILIO_TO_2
-  const to3 = process.env.TWILIO_TO_3
-  const to4 = process.env.TWILIO_TO_4
 
   if (!sid || !token || !from || !to1) {
     return NextResponse.json({ error: 'Twilio no configurado' }, { status: 500 })
   }
 
-  const { mensaje } = await req.json()
-  if (!mensaje) {
-    return NextResponse.json({ error: 'Falta mensaje' }, { status: 400 })
+  const { tipo, fechaHora, turno, nombreCliente, telefonoCliente, direccion, linkCancelacion, linkNegocio } = await req.json()
+
+  if (!tipo || !fechaHora || !turno || !nombreCliente || !telefonoCliente) {
+    return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
   }
 
+  const sidAdmin = tipo === 'confirmacion'
+    ? process.env.TWILIO_CONTENT_SID_CONFIRMACION_ADMIN
+    : process.env.TWILIO_CONTENT_SID_CANCELACION_ADMIN
+
+  const sidCliente = tipo === 'confirmacion'
+    ? process.env.TWILIO_CONTENT_SID_CONFIRMACION_CLIENTE
+    : process.env.TWILIO_CONTENT_SID_CANCELACION_CLIENTE
+
+  if (!sidAdmin || !sidCliente) {
+    return NextResponse.json({ error: 'Content SIDs no configurados' }, { status: 500 })
+  }
+
+  const varsAdmin: Record<string, string> = {
+    '1': fechaHora,
+    '2': turno,
+    '3': nombreCliente,
+    '4': telefonoCliente,
+  }
+
+  const varsCliente: Record<string, string> = tipo === 'confirmacion'
+    ? { '1': fechaHora, '2': turno, '3': direccion ?? '', '4': linkCancelacion ?? '' }
+    : { '1': fechaHora, '2': turno, '3': direccion ?? '', '4': linkNegocio ?? '' }
+
+  const toCliente = `whatsapp:+549${telefonoCliente}`
+
   try {
-    const promesas = [enviarWhatsApp(to1, mensaje, sid, token, from)]
-    if (to2) promesas.push(enviarWhatsApp(to2, mensaje, sid, token, from))
-    if (to3) promesas.push(enviarWhatsApp(to3, mensaje, sid, token, from))
-    if (to4) promesas.push(enviarWhatsApp(to4, mensaje, sid, token, from))
+    const promesas: Promise<boolean>[] = [
+      enviarTemplate(to1, sidAdmin, varsAdmin, sid, token, from),
+      enviarTemplate(toCliente, sidCliente, varsCliente, sid, token, from),
+    ]
+    if (to2) promesas.push(enviarTemplate(to2, sidAdmin, varsAdmin, sid, token, from))
+
     await Promise.all(promesas)
     return NextResponse.json({ ok: true })
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Error de red' }, { status: 502 })
   }
 }
