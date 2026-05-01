@@ -18,7 +18,7 @@ Sistema de reservas online configurable por negocio. Un solo repo, una sola base
 |----|---------|-----------|----------|---------|
 | `sim-turnos` | OC.Hobbies.Racing | Av. 3 de Febrero 283, Rojas | 4 simuladores, 60 min | 15:00-02:00 todos los días |
 | `prgrssv` | Prgrssv | Zeballos 2239 6A, Rosario | 1 peluquero, 30 min | 09:00-19:30 Lun-Vie |
-| `lacancha` | La Cancha Padel | Av. 20 de Diciembre 130, Rojas | 5 canchas, 90 min | 09:00-00:00 todos los días |
+| `lacancha` | La Cancha Padel | Av. 20 de Diciembre 130, Rojas | 4 canchas, 90 min | 09:00-00:00 todos los días |
 
 ## Dominios
 
@@ -209,7 +209,7 @@ RLS deshabilitado (misma anon key para todos).
 | `/cancelar` | Redirige a /mis-turnos |
 | `/mis-turnos` | Buscar turnos propios por teléfono |
 | `/admin` | Panel con login por contraseña, grilla y tabla por fecha |
-| `/api/notificar` | POST server-side → Twilio WhatsApp (hasta 2 números) |
+| `/api/notificar` | POST server-side → Twilio Content Templates: admin (TO_1/TO_2) + cliente |
 
 ---
 
@@ -236,7 +236,9 @@ Los colores se definen en `config/<negocio>.ts` como `tema: { accent, accentHove
 - `calcularUmbral()` — detecta si el horario cruza la medianoche
 
 ### Notificaciones server-side (Twilio)
-Las credenciales de Twilio viven en variables de entorno del servidor. La llamada se hace desde `app/api/notificar/route.ts` con `Promise.all` para enviar a los dos números en paralelo. Nunca se exponen al browser.
+Las credenciales de Twilio viven en variables de entorno del servidor. La llamada se hace desde `app/api/notificar/route.ts` usando Twilio Content Templates (`ContentSid` + `ContentVariables`). Envía en paralelo a: admin (TO_1 y opcionalmente TO_2) y al teléfono del cliente. Nunca se exponen al browser.
+
+El endpoint recibe `{ tipo, fechaHora, turno, nombreCliente, telefonoCliente, direccion, linkCancelacion, linkNegocio }`. Según `tipo` (`confirmacion` o `cancelacion`) elige los SIDs de admin y cliente correspondientes.
 
 ### cancel_token en lugar de auth
 Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login. Los links de cancelación se muestran en `/confirmado` y se envían por WhatsApp.
@@ -265,44 +267,49 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 # Twilio WhatsApp (server-side, sin NEXT_PUBLIC_)
 TWILIO_ACCOUNT_SID=AC...
 TWILIO_AUTH_TOKEN=...
-TWILIO_FROM=whatsapp:+14155238886
-TWILIO_TO_1=whatsapp:+549XXXXXXXXXX   # número principal
-TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
+TWILIO_FROM=whatsapp:+XXXXXXXXXXXXXXX
+TWILIO_TO_1=whatsapp:+549XXXXXXXXXX   # número principal admin
+TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario admin (opcional)
+
+# Content Template SIDs (Twilio Content Template Builder)
+TWILIO_CONTENT_SID_CONFIRMACION_ADMIN=HX...
+TWILIO_CONTENT_SID_CONFIRMACION_CLIENTE=HX...
+TWILIO_CONTENT_SID_CANCELACION_ADMIN=HX...
+TWILIO_CONTENT_SID_CANCELACION_CLIENTE=HX...
 ```
 
 ---
 
-## Estado actual WhatsApp / Twilio (2026-04-28)
+## Estado actual WhatsApp / Twilio (2026-05-01)
 
 | Negocio | TWILIO_FROM | Estado |
 |---------|-------------|--------|
-| `lacancha` | `whatsapp:+15559391060` | WhatsApp Business API activo, número Online |
-| `sim-turnos` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar) |
-| `prgrssv` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar) |
+| `lacancha` | `whatsapp:+15559391060` | WhatsApp Business API activo |
+| `sim-turnos` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar a +15559391060) |
+| `prgrssv` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar a +15559391060) |
 
-**Dominio:** `reservaturnos.com.ar` comprado en Donweb, apuntado a Vercel proyecto lacancha. Verificado en Meta Business (aprobación pendiente ~2 días hábiles).
+**Dominio:** `reservaturnos.com.ar` comprado en Donweb, apuntado a Vercel proyecto lacancha. Meta Business aprobado.
 
-### Pendiente cuando Meta apruebe
+**`route.ts` ya usa Content Templates** (migrado 2026-05-01). Variables de entorno `TWILIO_CONTENT_SID_*` deben cargarse en los tres proyectos de Vercel.
 
-1. Crear templates en Twilio Content Template Builder:
-   - `confirmacion_turno` — variables: negocio, fecha, hora, recurso, nombre, teléfono
-   - `cancelacion_turno` — variables: nombre, fecha, hora, recurso, negocio
-2. Modificar `app/api/notificar/route.ts` para usar Content SID en lugar de texto libre
-3. Agregar `TWILIO_CONTENT_SID_RESERVA` y `TWILIO_CONTENT_SID_CANCELACION` en los tres proyectos de Vercel
-4. Actualizar `TWILIO_FROM=whatsapp:+15559391060` en sim-turnos y prgrssv
-5. Probar end-to-end en lacancha con número real
+### Pendiente
+
+1. Actualizar `TWILIO_FROM=whatsapp:+15559391060` en sim-turnos y prgrssv (Vercel env vars)
+2. Cargar los 4 `TWILIO_CONTENT_SID_*` en los tres proyectos de Vercel
+3. Probar end-to-end en los tres negocios
 
 ---
 
 ## Features pendientes
 
+- ~~**Historial de turnos en admin y mis-turnos**~~ — implementado el 2026-04-30. Toggle "Ver historial / Ocultar historial" en ambas páginas.
 - **`bgImage` configurable desde `NegocioConfig`** — prgrssv ya tiene imagen de fondo hardcodeada en `app/confirmado/page.tsx` (condicional por `negocio.id`), pendiente hacerla configurable desde config y extender a más páginas.
 - **Límite de reservas por cliente** — campo `limites` en `NegocioConfig` con `maxTurnosActivos`, `maxRecursosMismaHora`, `maxTurnosPorDia`. Validar en Server Action del insert. Lógica por negocio: sim-turnos permite multi-recurso misma hora, lacancha no.
 - **Recordatorio 1hs antes por WhatsApp** — requiere cron job, no puede dispararse desde el flujo de reserva.
 
 ## Infraestructura pendiente
 
-- **WhatsApp Business API** — esperando monotributo + aprobación Meta. Templates diseñados: confirmación (admin + cliente), cancelación (admin + cliente), recordatorio 1hs (solo cliente).
+- **WhatsApp Business API** — Meta aprobado, lacancha activo. sim-turnos y prgrssv pendientes de migrar `TWILIO_FROM` al número +15559391060.
 - **Mercado Pago / seña** — Checkout Pro, requiere monotributo.
 - **Auth admin server-side** — contraseña actualmente en bundle del cliente (visible en JS).
 - **RLS en Supabase** — anon key tiene acceso total a todas las tablas.
@@ -311,6 +318,7 @@ TWILIO_TO_2=whatsapp:+549XXXXXXXXXX   # número secundario (opcional)
 ## Bugs conocidos
 
 - **Bug admin (baja prioridad)** — al borrar un turno desde la vista tabla cambia a vista grilla.
+- ~~**Constraint UNIQUE en turnos sin negocio_id**~~ — resuelto el 2026-04-30. Ver nota en sección `turnos` del esquema de BD.
 
 ---
 
