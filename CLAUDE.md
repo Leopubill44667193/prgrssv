@@ -118,6 +118,7 @@ No hay tests configurados y no se deben agregar salvo que se pida explícitament
     seniaObligatoria?: boolean    // seña obligatoria al reservar (no implementado)
     recordatorio24hs?: boolean    // recordatorio 24hs antes (no implementado)
     confirmacionCliente?: boolean // confirmación al cliente por WhatsApp (no implementado)
+    limiteReservasPorIP?: number  // máximo de reservas por IP en 24hs. Requiere tabla reservas_por_ip en BD
   }
   fontTitle?: string              // fuente para títulos, cargada desde Google Fonts vía next/font. Ej: 'Bebas Neue'
   bgTexture?: 'grid'              // textura de fondo sutil. 'grid' = grilla verde semitransparente
@@ -193,6 +194,29 @@ Sin esto los datos se mezclan entre negocios.
 
 **Sobre hora_fin:** se guarda en el momento de la reserva usando `negocio.duracionMinutos`. Si en el futuro se cambia la duración del negocio, los turnos viejos conservan la hora_fin original — eso es intencional.
 
+### `reservas_por_ip`
+| campo | tipo | notas |
+|-------|------|-------|
+| id | uuid PK | default gen_random_uuid() |
+| negocio_id | text NOT NULL | |
+| ip | text NOT NULL | |
+| created_at | timestamptz NOT NULL | default now() |
+
+**Índice:** `(negocio_id, ip, created_at DESC)`
+
+Usada por `/api/validar-reserva` para el rate limiting por IP. **Migración pendiente de ejecutar en Supabase** (ver Infraestructura pendiente).
+
+```sql
+CREATE TABLE reservas_por_ip (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  negocio_id text        NOT NULL,
+  ip         text        NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_reservas_por_ip_negocio_ip_created
+  ON reservas_por_ip (negocio_id, ip, created_at DESC);
+```
+
 RLS deshabilitado (misma anon key para todos).
 
 ---
@@ -210,6 +234,7 @@ RLS deshabilitado (misma anon key para todos).
 | `/mis-turnos` | Buscar turnos propios por teléfono |
 | `/admin` | Panel con login por contraseña, grilla y tabla por fecha |
 | `/api/notificar` | POST server-side → Twilio Content Templates: admin (TO_1/TO_2) + cliente |
+| `/api/validar-reserva` | POST server-side → valida nombre/teléfono y límite por IP antes del insert |
 
 ---
 
@@ -242,6 +267,17 @@ El endpoint recibe `{ tipo, fechaHora, turno, nombreCliente, telefonoCliente, di
 
 ### cancel_token en lugar de auth
 Cada turno tiene un `cancel_token` UUID generado por Supabase. Permite cancelar sin cuenta ni login. Los links de cancelación se muestran en `/confirmado` y se envían por WhatsApp.
+
+### Anti-abuso en el flujo de reserva (`app/api/validar-reserva/route.ts`)
+Endpoint POST llamado desde el cliente antes de insertar un turno. Recibe `{ negocio_id, nombre, telefono }` y valida en orden:
+
+1. **Nombre:** exactamente un espacio (nombre + apellido), cada parte 3-15 letras, solo caracteres con acentos, al menos una vocal, no todo la misma letra, blacklist de palabras falsas.
+2. **Teléfono:** 10-11 dígitos, solo números.
+3. **Límite por IP** (si `features.limiteReservasPorIP` está definido): cuenta registros en `reservas_por_ip` para esa IP + negocio en las últimas 24hs. Si supera el límite devuelve 429. Si pasa, inserta un registro nuevo.
+
+La IP se lee de `x-forwarded-for` (Vercel) con fallback a `x-real-ip`. El mapa `configs` se exporta desde `config/index.ts` para que el endpoint pueda leer la config de cualquier negocio sin depender de `NEXT_PUBLIC_NEGOCIO_ID`.
+
+Valores actuales de `limiteReservasPorIP`: `lacancha` = 2, `sim-turnos` = 4, `prgrssv` = 1.
 
 ### Deduplicación de clientes por teléfono
 Antes de insertar un turno se busca si ya existe un cliente con ese teléfono y negocio_id. Si existe se reutiliza el id y se actualiza el nombre. La query usa `.single()` que devuelve 406 si no encuentra fila — esto es normal y el código lo maneja.
@@ -280,11 +316,11 @@ TWILIO_CONTENT_SID_CANCELACION_CLIENTE=HX...
 
 ---
 
-## Estado actual WhatsApp / Twilio (2026-05-01)
+## Estado actual WhatsApp / Twilio (2026-05-03)
 
 | Negocio | TWILIO_FROM | Estado |
 |---------|-------------|--------|
-| `lacancha` | `whatsapp:+15559391060` | WhatsApp Business API activo |
+| `lacancha` | `whatsapp:+15559391060` | **WABA deshabilitada** — error 63112 por rechazos del nombre para mostrar |
 | `sim-turnos` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar a +15559391060) |
 | `prgrssv` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar a +15559391060) |
 
@@ -292,27 +328,50 @@ TWILIO_CONTENT_SID_CANCELACION_CLIENTE=HX...
 
 **`route.ts` ya usa Content Templates** (migrado 2026-05-01). Variables de entorno `TWILIO_CONTENT_SID_*` deben cargarse en los tres proyectos de Vercel.
 
+### Incidente WABA lacancha (2026-05-03)
+
+- **Error:** 63112 — WABA deshabilitada por Meta por rechazos del nombre para mostrar
+- **Ticket Twilio:** #26701181 (P2, abierto 2026-05-03)
+- **Nombres rechazados:** "Reservas Online", "Turnos Online AR" (en revisión por Meta)
+- **Pendiente:** resolución de Twilio/Meta para re-habilitar mensajes salientes
+
 ### Pendiente
 
 1. Actualizar `TWILIO_FROM=whatsapp:+15559391060` en sim-turnos y prgrssv (Vercel env vars)
 2. Cargar los 4 `TWILIO_CONTENT_SID_*` en los tres proyectos de Vercel
 3. Probar end-to-end en los tres negocios
+4. Resolver WABA deshabilitada de lacancha (ticket #26701181)
 
 ---
 
 ## Features pendientes
 
 - ~~**Historial de turnos en admin y mis-turnos**~~ — implementado el 2026-04-30. Toggle "Ver historial / Ocultar historial" en ambas páginas.
+- ~~**Validación de nombre y apellido obligatorio en el flujo de reserva**~~ — implementado el 2026-05-03. Endpoint `/api/validar-reserva` valida formato nombre + apellido antes del insert.
+- ~~**Límite de reservas por IP por día (configurable por negocio)**~~ — implementado el 2026-05-03. Feature `limiteReservasPorIP` en config, tabla `reservas_por_ip` en BD (migración pendiente).
 - **`bgImage` configurable desde `NegocioConfig`** — prgrssv ya tiene imagen de fondo hardcodeada en `app/confirmado/page.tsx` (condicional por `negocio.id`), pendiente hacerla configurable desde config y extender a más páginas.
-- **Límite de reservas por cliente** — campo `limites` en `NegocioConfig` con `maxTurnosActivos`, `maxRecursosMismaHora`, `maxTurnosPorDia`. Validar en Server Action del insert. Lógica por negocio: sim-turnos permite multi-recurso misma hora, lacancha no.
+- **Límite de reservas por cliente** — campo `limites` en `NegocioConfig` con `maxTurnosActivos`, `maxRecursosMismaHora`, `maxTurnosPorDia`. Lógica por negocio: sim-turnos permite multi-recurso misma hora, lacancha no. (Distinto del límite por IP ya implementado.)
 - **Recordatorio 1hs antes por WhatsApp** — requiere cron job, no puede dispararse desde el flujo de reserva.
+
+## Anti-abuso
+
+Implementado el 2026-05-03. Activo en los tres negocios.
+
+- **Endpoint `/api/validar-reserva`** — POST server-side llamado antes del insert. Valida nombre (nombre + apellido separados por exactamente un espacio, solo letras con acentos, al menos una vocal por parte, sin palabras de blacklist), teléfono (10-11 dígitos) y límite por IP.
+- **Tabla `reservas_por_ip`** — registra cada reserva con `negocio_id`, `ip` y `created_at`. El conteo es por ventana deslizante de 24hs. **Migración pendiente de ejecutar en Supabase.**
+- **Config `limiteReservasPorIP`** — campo en `features` de `NegocioConfig`. Valores: `lacancha` = 2, `sim-turnos` = 4, `prgrssv` = 1. Si no está definido, el endpoint omite el chequeo de IP.
+
+---
 
 ## Infraestructura pendiente
 
-- **WhatsApp Business API** — Meta aprobado, lacancha activo. sim-turnos y prgrssv pendientes de migrar `TWILIO_FROM` al número +15559391060.
+- **WhatsApp Business API** — sim-turnos y prgrssv pendientes de migrar `TWILIO_FROM` al número +15559391060.
+- **Resolver WABA deshabilitada (lacancha)** — ticket Twilio #26701181. Error 63112, Meta rechazó nombres para mostrar. Pendiente aprobación de nombre definitivo.
+- **Definir nombre para mostrar aprobado por Meta (lacancha)** — "Reservas Online" y "Turnos Online AR" rechazados. Pendiente elegir y enviar nuevo nombre a revisión.
 - **Mercado Pago / seña** — Checkout Pro, requiere monotributo.
 - **Auth admin server-side** — contraseña actualmente en bundle del cliente (visible en JS).
 - **RLS en Supabase** — anon key tiene acceso total a todas las tablas.
+- **Migración `reservas_por_ip`** — tabla creada el 2026-05-03, SQL listo en la sección de esquema. Pendiente ejecutar en Supabase. Sin ella, `/api/validar-reserva` devuelve 500 en los tres negocios.
 - **Timezone explícita en admin** — `created_at` resta 3hs hardcodeado (UTC-3).
 
 ## Bugs conocidos
