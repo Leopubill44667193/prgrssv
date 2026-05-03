@@ -118,8 +118,11 @@ No hay tests configurados y no se deben agregar salvo que se pida explícitament
     seniaObligatoria?: boolean    // seña obligatoria al reservar (no implementado)
     recordatorio24hs?: boolean    // recordatorio 24hs antes (no implementado)
     confirmacionCliente?: boolean // confirmación al cliente por WhatsApp (no implementado)
-    limiteReservasPorIP?: number  // máximo de reservas por IP en 24hs. Requiere tabla reservas_por_ip en BD
+    limiteReservasPorIP?: number  // número máximo de reservas permitidas por IP en una ventana de 24 horas. Si está undefined, no se aplica límite.
   }
+  anticipacionMinHs?: number      // bloquea slots con menos de N horas de anticipación desde ahora (aplica en días futuros también). undefined = sin restricción
+  cancelacionMinHs?: number       // horas mínimas de anticipación para cancelar sin contactar al local. Se muestra en /cancelar/[token]
+  whatsappNegocio?: string        // número WhatsApp del local sin + ni espacios, ej: "5492474470920". Se usa en el botón de contacto de /confirmado
   fontTitle?: string              // fuente para títulos, cargada desde Google Fonts vía next/font. Ej: 'Bebas Neue'
   bgTexture?: 'grid'              // textura de fondo sutil. 'grid' = grilla verde semitransparente
 }
@@ -357,7 +360,19 @@ TWILIO_CONTENT_SID_CANCELACION_CLIENTE=HX...
 
 Implementado el 2026-05-03. Activo en los tres negocios.
 
-- **Endpoint `/api/validar-reserva`** — POST server-side llamado antes del insert. Valida nombre (nombre + apellido separados por exactamente un espacio, solo letras con acentos, al menos una vocal por parte, sin palabras de blacklist), teléfono (10-11 dígitos) y límite por IP.
+- **Endpoint `/api/validar-reserva`** — POST server-side llamado antes del insert. Valida nombre, teléfono y límite por IP. La IP se lee del header `x-forwarded-for` (Vercel la inyecta automáticamente en producción). En local siempre es `127.0.0.1`, lo que hace que el límite se consuma rápido al testear — limpiar la tabla `reservas_por_ip` entre pruebas si es necesario.
+
+  **Reglas del nombre:**
+  - Exactamente un espacio (separa nombre y apellido)
+  - Cada parte: entre 3 y 15 letras
+  - Solo letras con acentos (á é í ó ú ü ñ y mayúsculas), sin números ni símbolos
+  - Cada parte debe tener al menos una vocal
+  - Cada parte no puede ser toda la misma letra (ej: "aaa")
+  - Blacklist case insensitive por parte: `test`, `prueba`, `asd`, `asdf`, `xxx`, `admin`, `null`, `undefined`, `nombre`, `user`, `cliente`, `nobody`, `fake`, `anonymous`
+
+  **Reglas del teléfono:**
+  - Solo dígitos
+  - Entre 10 y 11 caracteres (formato argentino, sin 0 ni 15)
 - **Tabla `reservas_por_ip`** — registra cada reserva con `negocio_id`, `ip` y `created_at`. El conteo es por ventana deslizante de 24hs. **Migración pendiente de ejecutar en Supabase.**
 - **Config `limiteReservasPorIP`** — campo en `features` de `NegocioConfig`. Valores: `lacancha` = 2, `sim-turnos` = 4, `prgrssv` = 1. Si no está definido, el endpoint omite el chequeo de IP.
 
