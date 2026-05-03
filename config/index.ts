@@ -10,6 +10,8 @@ const configs: Record<string, NegocioConfig> = {
   'lacancha': lacancha,
 }
 
+export { configs }
+
 const id = process.env.NEXT_PUBLIC_NEGOCIO_ID ?? 'sim-turnos'
 
 export const negocio: NegocioConfig = configs[id] ?? simTurnos

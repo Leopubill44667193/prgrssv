@@ -21,7 +21,7 @@ const config: NegocioConfig = {
   emoji: '✂️',
   seleccionSimple: true,
   tema: { accent: '#eab308', accentHover: '#ca8a04', bg: '#000000' },
-  features: { multiRecurso: false },
+  features: { multiRecurso: false, limiteReservasPorIP: 1 },
   anticipacionMinHs: 5,
   cancelacionMinHs: 3,
   whatsappNegocio: '5492475410489',

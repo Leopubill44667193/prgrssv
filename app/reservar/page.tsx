@@ -75,6 +75,19 @@ export default function ReservarPage() {
 
   async function confirmarReserva() {
     setCargando(true)
+
+    const validacion = await fetch('/api/validar-reserva', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ negocio_id: negocio.id, telefono, nombre }),
+    })
+    if (!validacion.ok) {
+      const data = await validacion.json().catch(() => ({}))
+      alert(data.error ?? 'Error de validación')
+      setCargando(false)
+      return
+    }
+
     let clienteId
     const { data: clienteExistente } = await supabase.from('clientes').select('id').eq('telefono', telefono).eq('negocio_id', negocio.id).single()
     if (clienteExistente) {
@@ -274,8 +287,8 @@ export default function ReservarPage() {
           <div className="mb-8 border border-white/10 rounded-xl p-6">
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Tus datos</p>
             <div className="mb-4">
-              <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Nombre</label>
-              <input type="text" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-[var(--accent)] outline-none text-sm" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan Perez" />
+              <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Nombre y apellido</label>
+              <input type="text" className="bg-white/5 border border-white/10 rounded-xl p-3 w-full text-white focus:border-[var(--accent)] outline-none text-sm" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan Pérez" />
             </div>
             <div>
               <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Telefono</label>

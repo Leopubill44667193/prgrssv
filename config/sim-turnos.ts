@@ -22,7 +22,7 @@ const config: NegocioConfig = {
   duracionMinutos: 60,
   adminPassword: 'racing2025',
   tema: { accent: '#ef4444', accentHover: '#dc2626', bg: '#000000' },
-  features: { multiRecurso: true },
+  features: { multiRecurso: true, limiteReservasPorIP: 4 },
   cancelacionMinHs: 3,
   whatsappNegocio: '5492475437017',
 }
