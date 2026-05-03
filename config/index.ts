@@ -2,12 +2,14 @@ import type { NegocioConfig } from '@/lib/config'
 import simTurnos from './sim-turnos'
 import prgrssv from './prgrssv'
 import lacancha from './lacancha'
+import landing from './landing'
 
 // Agregá nuevos negocios acá
 const configs: Record<string, NegocioConfig> = {
   'sim-turnos': simTurnos,
   'prgrssv': prgrssv,
   'lacancha': lacancha,
+  'landing': landing,
 }
 
 export { configs }

@@ -7,6 +7,7 @@
     "dev:sim": "NEXT_PUBLIC_NEGOCIO_ID=sim-turnos next dev",
     "dev:prgrssv": "NEXT_PUBLIC_NEGOCIO_ID=prgrssv next dev",
     "dev:lacancha": "NEXT_PUBLIC_NEGOCIO_ID=lacancha next dev",
+    "dev:landing": "NEXT_PUBLIC_NEGOCIO_ID=landing next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
