@@ -28,7 +28,7 @@ function LandingPage() {
     <main className="min-h-screen bg-[var(--bg)] text-white flex flex-col">
       <div className="border-b border-white/10 px-8 py-5">
         <h1 className="text-xl font-black tracking-widest uppercase">
-          <span className="text-[var(--accent)]">Reserva</span>Turnos
+          <span className="text-[var(--accent)]">Reserva</span> Turnos
         </h1>
       </div>
 
@@ -47,7 +47,7 @@ function LandingPage() {
         </p>
 
         <div className="w-full max-w-lg mb-16">
-          <p className="text-xs tracking-[0.3em] uppercase text-gray-500 mb-6">Negocios que usan ReservaTurnos</p>
+          <p className="text-xs tracking-[0.3em] uppercase text-gray-500 mb-6">Negocios que usan Reserva Turnos</p>
           <div className="flex flex-col gap-3">
             {negocios.map((n) => (
               <a
@@ -79,7 +79,7 @@ function LandingPage() {
       </div>
 
       <div className="border-t border-white/5 px-8 py-6 text-center">
-        <p className="text-xs text-gray-700 tracking-widest uppercase">ReservaTurnos · Argentina</p>
+        <p className="text-xs text-gray-700 tracking-widest uppercase">Reserva Turnos · Argentina</p>
       </div>
     </main>
   )

@@ -2,8 +2,8 @@ import type { NegocioConfig } from '@/lib/config'
 
 const config: NegocioConfig = {
   id: 'landing',
-  nombre: 'ReservaTurnos',
-  nombreDisplay: { parte1: 'Reserva', parte2: 'Turnos' },
+  nombre: 'Reserva Turnos',
+  nombreDisplay: { parte1: 'Reserva', parte2: ' Turnos' },
   direccion: 'Argentina',
   horario: { inicioMin: 0, finMin: 24 * 60, intervaloMinutos: 60 },
   recursos: [{ id: 1, nombre: 'Recurso' }],
