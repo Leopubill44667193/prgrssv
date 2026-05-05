@@ -316,6 +316,9 @@ TWILIO_CONTENT_SID_CONFIRMACION_ADMIN=HX...
 TWILIO_CONTENT_SID_CONFIRMACION_CLIENTE=HX...
 TWILIO_CONTENT_SID_CANCELACION_ADMIN=HX...
 TWILIO_CONTENT_SID_CANCELACION_CLIENTE=HX...
+
+# Auth admin (server-side, sin NEXT_PUBLIC_, distinta por negocio en Vercel)
+ADMIN_PASSWORD=...
 ```
 
 ---
@@ -385,6 +388,29 @@ En el último paso de `/reservar` (después de ingresar nombre y teléfono) se r
 
 ---
 
+## Auth admin
+
+Implementado el 2026-05-05. Reemplaza la validación client-side (contraseña en bundle JS) por un esquema server-side con cookie httpOnly.
+
+**Flujo:**
+1. Acceder a `/admin` sin sesión → middleware redirige a `/admin-login`
+2. `/admin-login` envía `POST /api/admin-login` con la contraseña
+3. El endpoint compara contra `process.env.ADMIN_PASSWORD` (nunca expuesta al cliente)
+4. Si es correcta: setea cookie `admin_session` (httpOnly, valor = SHA-256 del password, 7 días)
+5. Middleware verifica la cookie en cada request a `/admin/*`
+6. Logout: `DELETE /api/admin-login` → limpia la cookie → redirige a `/admin-login`
+
+**Archivos:**
+- `middleware.ts` — intercepta `/admin` y `/admin/*`, verifica cookie
+- `app/api/admin-login/route.ts` — POST (login) y DELETE (logout)
+- `app/admin-login/page.tsx` — formulario de contraseña
+
+**Variable de entorno:** `ADMIN_PASSWORD` — sin `NEXT_PUBLIC_`, distinta por negocio en Vercel. Agregar también a `.env.local` para desarrollo local.
+
+**Nota:** la página de login está en `/admin-login` (no `/admin/login`) porque `app/admin/` tiene permisos de root en el sistema de archivos local. Funcionalmente idéntico.
+
+---
+
 ## Anti-abuso
 
 Implementado el 2026-05-03. Activo en los tres negocios.
@@ -413,7 +439,7 @@ Implementado el 2026-05-03. Activo en los tres negocios.
 - **Resolver WABA deshabilitada (lacancha)** — ticket Twilio #26701181. Error 63112, Meta rechazó nombres para mostrar. Pendiente aprobación de nombre definitivo.
 - **Definir nombre para mostrar aprobado por Meta (lacancha)** — "Reservas Online" y "Turnos Online AR" rechazados. Pendiente elegir y enviar nuevo nombre a revisión.
 - **Mercado Pago / seña** — Checkout Pro, requiere monotributo.
-- **Auth admin server-side** — contraseña actualmente en bundle del cliente (visible en JS).
+- ~~**Auth admin server-side**~~ — implementado el 2026-05-05. `ADMIN_PASSWORD` en env var server-side, cookie httpOnly `admin_session`. Ver sección "Auth admin" abajo.
 - **RLS en Supabase** — anon key tiene acceso total a todas las tablas.
 - **Migración `reservas_por_ip`** — tabla creada el 2026-05-03, SQL listo en la sección de esquema. Pendiente ejecutar en Supabase. Sin ella, `/api/validar-reserva` devuelve 500 en los tres negocios.
 - **Timezone explícita en admin** — `created_at` resta 3hs hardcodeado (UTC-3).
