@@ -117,7 +117,7 @@ export default function ReservarPage() {
   async function confirmarReserva() {
     setCargando(true)
 
-    if (negocio.id === 'lacancha' && !emailVerificado) {
+    if (!emailVerificado) {
       alert('Necesitás verificar tu identidad con Google antes de confirmar.')
       setCargando(false)
       return
@@ -172,7 +172,7 @@ export default function ReservarPage() {
         fecha,
         hora_inicio: horaSeleccionada,
         hora_fin: horaFin,
-        ...(negocio.id === 'lacancha' && emailVerificado ? { email_verificacion: emailVerificado } : {}),
+        ...(emailVerificado ? { email_verificacion: emailVerificado } : {}),
       }).select('cancel_token').single()
       if (errorTurno || !turnoCreado) {
         const msg = errorTurno?.code === '23505'
@@ -345,8 +345,8 @@ export default function ReservarPage() {
           </div>
         )}
 
-        {/* Verificación Google — solo lacancha */}
-        {negocio.id === 'lacancha' && nombre && telefono && recursosSeleccionados.length > 0 && (
+        {/* Verificación Google */}
+        {nombre && telefono && recursosSeleccionados.length > 0 && (
           <div className="mb-8 border border-white/10 rounded-xl p-6">
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Verificación de identidad</p>
             {emailVerificado ? (
@@ -372,7 +372,7 @@ export default function ReservarPage() {
         )}
 
         {/* Confirmar */}
-        {nombre && telefono && recursosSeleccionados.length > 0 && (negocio.id !== 'lacancha' || !!emailVerificado) && (
+        {nombre && telefono && recursosSeleccionados.length > 0 && !!emailVerificado && (
           <button
             onClick={confirmarReserva}
             disabled={cargando}
