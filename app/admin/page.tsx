@@ -26,9 +26,6 @@ function hoy() {
 }
 
 export default function Admin() {
-  const [autenticado, setAutenticado] = useState(false)
-  const [inputPass, setInputPass] = useState('')
-  const [passError, setPassError] = useState(false)
   const [turnos, setTurnos] = useState<Turno[]>([])
   const [loading, setLoading] = useState(false)
   const [fecha, setFecha] = useState(hoy())
@@ -41,15 +38,10 @@ export default function Admin() {
   const [mostrarPasados, setMostrarPasados] = useState(false)
 
   useEffect(() => {
-    if (sessionStorage.getItem('admin_ok') === '1') setAutenticado(true)
-  }, [])
-
-  useEffect(() => {
-    if (!autenticado) return
     fetchTurnos()
     if (!todasFechas) { fetchBloqueo(); fetchHorariosBloqueados() }
     else { setDiaBloqueado(null); setHorariosBloqueados(new Set()) }
-  }, [autenticado, fecha, todasFechas])
+  }, [fecha, todasFechas])
 
   const fetchTurnos = async () => {
     setLoading(true)
@@ -117,39 +109,6 @@ export default function Admin() {
     return new Date(`${fecha}T${hora}`) < new Date()
   }
 
-  function login() {
-    if (inputPass === negocio.adminPassword) {
-      sessionStorage.setItem('admin_ok', '1')
-      setAutenticado(true)
-    } else {
-      setPassError(true)
-      setInputPass('')
-    }
-  }
-
-  if (!autenticado) {
-    return (
-      <main className="min-h-screen bg-[var(--bg)] text-white flex items-center justify-center px-8">
-        <div className="w-full max-w-sm">
-          <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-2 text-center">Panel</p>
-          <h1 className="text-3xl font-black uppercase text-center mb-10">Admin</h1>
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={inputPass}
-            onChange={(e) => { setInputPass(e.target.value); setPassError(false) }}
-            onKeyDown={(e) => e.key === 'Enter' && login()}
-            className={'bg-white/5 border rounded-xl p-4 w-full text-white outline-none text-sm mb-3 ' + (passError ? 'border-[var(--accent)]' : 'border-white/10 focus:border-[var(--accent)]')}
-          />
-          {passError && <p className="text-[var(--accent)] text-xs mb-3 tracking-widest uppercase">Contraseña incorrecta</p>}
-          <button onClick={login} className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl p-4 font-black uppercase tracking-widest transition text-sm">
-            Entrar
-          </button>
-        </div>
-      </main>
-    )
-  }
-
   const turnosFiltrados = (!todasFechas && !mostrarPasados)
     ? turnos.filter(t => !esPasado(t.fecha, t.hora_fin.slice(0, 5)))
     : turnos
@@ -207,7 +166,7 @@ export default function Admin() {
               </>
             )}
             <button
-              onClick={() => { sessionStorage.removeItem('admin_ok'); setAutenticado(false) }}
+              onClick={async () => { await fetch('/api/admin-login', { method: 'DELETE' }); window.location.href = '/admin-login' }}
               className="text-xs text-gray-600 hover:text-[var(--accent)] uppercase tracking-widest transition"
             >
               Salir
