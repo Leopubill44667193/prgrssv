@@ -192,6 +192,7 @@ Sin esto los datos se mezclan entre negocios.
 | hora_fin | time | se guarda en el insert, calculada con negocio.duracionMinutos |
 | cancel_token | uuid | generado por Supabase, para cancelar sin login |
 | created_at | timestamptz | |
+| email_verificacion | text | nullable — email Google verificado al momento de reservar. NULL en turnos anteriores a 2026-05-05 |
 
 **Constraint:** `UNIQUE (negocio_id, simulador_id, fecha, hora_inicio)` — **OJO:** el constraint real en la BD se llamaba `turnos_simulador_fecha_hora_unique` y originalmente NO incluía `negocio_id`, lo que causaba colisiones entre negocios. Se corrigió el 2026-04-30 con `ALTER TABLE turnos DROP CONSTRAINT ... / ADD CONSTRAINT ... UNIQUE (negocio_id, simulador_id, fecha, hora_inicio)`.
 
@@ -352,9 +353,37 @@ TWILIO_CONTENT_SID_CANCELACION_CLIENTE=HX...
 - ~~**Historial de turnos en admin y mis-turnos**~~ — implementado el 2026-04-30. Toggle "Ver historial / Ocultar historial" en ambas páginas.
 - ~~**Validación de nombre y apellido obligatorio en el flujo de reserva**~~ — implementado el 2026-05-03. Endpoint `/api/validar-reserva` valida formato nombre + apellido antes del insert.
 - ~~**Límite de reservas por IP por día (configurable por negocio)**~~ — implementado el 2026-05-03. Feature `limiteReservasPorIP` en config, tabla `reservas_por_ip` en BD (migración pendiente).
+- ~~**Verificación Google antes de confirmar reserva**~~ — implementado el 2026-05-05. Todos los negocios. El cliente hace login con Google OAuth antes de confirmar; el email verificado se guarda en `turnos.email_verificacion`. Admin muestra columna Email en la tabla de turnos.
 - **`bgImage` configurable desde `NegocioConfig`** — prgrssv ya tiene imagen de fondo hardcodeada en `app/confirmado/page.tsx` (condicional por `negocio.id`), pendiente hacerla configurable desde config y extender a más páginas.
 - **Límite de reservas por cliente** — campo `limites` en `NegocioConfig` con `maxTurnosActivos`, `maxRecursosMismaHora`, `maxTurnosPorDia`. Lógica por negocio: sim-turnos permite multi-recurso misma hora, lacancha no. (Distinto del límite por IP ya implementado.)
 - **Recordatorio 1hs antes por WhatsApp** — requiere cron job, no puede dispararse desde el flujo de reserva.
+
+## Auth / Verificación de identidad
+
+Implementado el 2026-05-05. Activo en los tres negocios.
+
+En el último paso de `/reservar` (después de ingresar nombre y teléfono) se requiere verificar identidad con Google antes de poder confirmar. La sesión OAuth persiste en el browser — en visitas siguientes el usuario ya está verificado y confirma directo.
+
+**Configuración Supabase Auth:**
+- Provider: Google OAuth activado
+- Callback URL: `https://smxxwdgmxvrvinfzxwan.supabase.co/auth/v1/callback`
+- Site URL: `https://reservaturnos.com.ar`
+- Redirect URLs permitidas: `https://lacancha.reservaturnos.com.ar/reservar`, `https://ochobbies.reservaturnos.com.ar/reservar`, `https://prgrssv.reservaturnos.com.ar/reservar`, `http://localhost:3000/reservar`
+
+**Google Cloud Console:**
+- Proyecto: `reservaturnos` (ID: `reservaturnos-495400`)
+- Client ID: `1035723225880-fo0gc84cn93aa1o7aekdbvgrm3q97ngc.apps.googleusercontent.com`
+- Authorized redirect URI: `https://smxxwdgmxvrvinfzxwan.supabase.co/auth/v1/callback`
+
+**Flujo:**
+1. Cliente completa fecha / hora / cancha / nombre / teléfono
+2. Aparece bloque "Verificación de identidad" con botón Google
+3. OAuth redirect → Google → Supabase callback → vuelve a `/reservar`
+4. El estado del formulario se preserva en `sessionStorage` antes del redirect y se restaura al volver
+5. Email verificado se muestra con ✓ verde; se habilita el botón "Confirmar"
+6. El email se guarda en `turnos.email_verificacion` al insertar
+
+---
 
 ## Anti-abuso
 
