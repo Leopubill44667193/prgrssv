@@ -37,7 +37,7 @@ Sistema de reservas online configurable por negocio. Un solo repo, una sola base
 | Framework | Next.js (App Router) |
 | UI | React 19 + Tailwind CSS v4 |
 | Base de datos | Supabase (PostgreSQL) — una sola instancia compartida, aislada por `negocio_id` |
-| Auth admin | Contraseña en config del negocio + sessionStorage |
+| Auth admin | `ADMIN_PASSWORD` (env var server-side) + cookie httpOnly `admin_session` |
 | Notificaciones | Twilio WhatsApp |
 | Deploy | Vercel |
 
