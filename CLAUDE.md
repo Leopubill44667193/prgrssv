@@ -236,7 +236,7 @@ RLS deshabilitado (misma anon key para todos).
 | `/cancelar/[token]` | Cancelación self-service, sin login |
 | `/cancelar` | Redirige a /mis-turnos |
 | `/mis-turnos` | Buscar turnos propios por teléfono |
-| `/admin` | Panel con login por contraseña, grilla y tabla por fecha |
+| `/admin` | Panel con tres modos: Próximos / Todos / Por día. Por día incluye grilla + tabla + bloqueos |
 | `/api/notificar` | POST server-side → Twilio Content Templates: admin (TO_1/TO_2) + cliente |
 | `/api/validar-reserva` | POST server-side → valida nombre/teléfono y límite por IP antes del insert |
 
@@ -446,7 +446,7 @@ Implementado el 2026-05-03. Activo en los tres negocios.
 
 ## Bugs conocidos
 
-- **Bug admin (baja prioridad)** — al borrar un turno desde la vista tabla cambia a vista grilla.
+- ~~**Bug admin**~~ — al borrar un turno desde vista tabla cambia a grilla. Resuelto al refactorizar modos.
 - ~~**Constraint UNIQUE en turnos sin negocio_id**~~ — resuelto el 2026-04-30. Ver nota en sección `turnos` del esquema de BD.
 
 ---
