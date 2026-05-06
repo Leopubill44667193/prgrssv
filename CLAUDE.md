@@ -323,31 +323,25 @@ ADMIN_PASSWORD=...
 
 ---
 
-## Estado actual WhatsApp / Twilio (2026-05-03)
+## Estado actual WhatsApp / Twilio (2026-05-06)
 
 | Negocio | TWILIO_FROM | Estado |
 |---------|-------------|--------|
-| `lacancha` | `whatsapp:+15559391060` | **WABA deshabilitada** — error 63112 por rechazos del nombre para mostrar |
-| `sim-turnos` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar a +15559391060) |
-| `prgrssv` | `whatsapp:+14155238886` | sandbox Twilio (pendiente migrar a +15559391060) |
+| `lacancha` | `whatsapp:+17015017795` | **Online** — Twilio Local US, funcionando |
+| `sim-turnos` | `whatsapp:+17015017795` | **Online** — Twilio Local US, funcionando |
+| `prgrssv` | `whatsapp:+17015017795` | **Online** — Twilio Local US, funcionando |
+
+**Número activo:** +17015017795 (Twilio Local US, $1.15/mes). Display name: "Gestia" (en revisión por Meta).
 
 **Dominio:** `reservaturnos.com.ar` comprado en Donweb, apuntado a Vercel proyecto lacancha. Meta Business aprobado.
 
-**`route.ts` ya usa Content Templates** (migrado 2026-05-01). Variables de entorno `TWILIO_CONTENT_SID_*` deben cargarse en los tres proyectos de Vercel.
+**`route.ts` ya usa Content Templates** (migrado 2026-05-01). Variables de entorno `TWILIO_CONTENT_SID_*` cargadas en los tres proyectos de Vercel.
 
-### Incidente WABA lacancha (2026-05-03)
+### Historial
 
-- **Error:** 63112 — WABA deshabilitada por Meta por rechazos del nombre para mostrar
-- **Ticket Twilio:** #26701181 (P2, abierto 2026-05-03)
-- **Nombres rechazados:** "Reservas Online", "Turnos Online AR" (en revisión por Meta)
-- **Pendiente:** resolución de Twilio/Meta para re-habilitar mensajes salientes
-
-### Pendiente
-
-1. Actualizar `TWILIO_FROM=whatsapp:+15559391060` en sim-turnos y prgrssv (Vercel env vars)
-2. Cargar los 4 `TWILIO_CONTENT_SID_*` en los tres proyectos de Vercel
-3. Probar end-to-end en los tres negocios
-4. Resolver WABA deshabilitada de lacancha (ticket #26701181)
+- **Número +15559391060** — descartado. Error 63112, WABA deshabilitada por Meta (rechazos de nombre para mostrar).
+- **Números +1 555...** — no son compatibles con WhatsApp Business API en producción. Usar siempre Twilio Local US numbers ($1.15/mes).
+- **Ticket Twilio #26701181** (P2, abierto 2026-05-03) — cerrado / reemplazado por número nuevo.
 
 ---
 
@@ -435,9 +429,9 @@ Implementado el 2026-05-03. Activo en los tres negocios.
 
 ## Infraestructura pendiente
 
-- **WhatsApp Business API** — sim-turnos y prgrssv pendientes de migrar `TWILIO_FROM` al número +15559391060.
-- **Resolver WABA deshabilitada (lacancha)** — ticket Twilio #26701181. Error 63112, Meta rechazó nombres para mostrar. Pendiente aprobación de nombre definitivo.
-- **Definir nombre para mostrar aprobado por Meta (lacancha)** — "Reservas Online" y "Turnos Online AR" rechazados. Pendiente elegir y enviar nuevo nombre a revisión.
+- ~~**WhatsApp Business API**~~ — resuelto el 2026-05-06. Los tres negocios usan `TWILIO_FROM=whatsapp:+17015017795` (Twilio Local US).
+- ~~**Resolver WABA deshabilitada (lacancha)**~~ — resuelto el 2026-05-06. Número +15559391060 descartado, reemplazado por +17015017795.
+- **Aprobar nombre "Gestia" en Meta** — display name en revisión por Meta. Pendiente aprobación final.
 - **Mercado Pago / seña** — Checkout Pro, requiere monotributo.
 - ~~**Auth admin server-side**~~ — implementado el 2026-05-05. `ADMIN_PASSWORD` en env var server-side, cookie httpOnly `admin_session`. Ver sección "Auth admin" abajo.
 - **RLS en Supabase** — anon key tiene acceso total a todas las tablas.
