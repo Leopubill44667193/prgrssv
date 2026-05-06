@@ -1,14 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { negocio } from '@/config'
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const [cargando, setCargando] = useState(false)
-  const router = useRouter()
 
   async function login() {
     setCargando(true)
@@ -19,8 +17,7 @@ export default function AdminLogin() {
       body: JSON.stringify({ password }),
     })
     if (res.ok) {
-      router.push('/admin')
-      router.refresh()
+      window.location.href = '/admin'
     } else {
       setError(true)
       setPassword('')

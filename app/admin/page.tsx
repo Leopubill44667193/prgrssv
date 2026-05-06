@@ -26,11 +26,11 @@ function hoy() {
 }
 
 export default function Admin() {
+  const [modo, setModo] = useState<'proximos' | 'todos' | 'dia'>('proximos')
   const [turnos, setTurnos] = useState<Turno[]>([])
   const [loading, setLoading] = useState(false)
   const [fecha, setFecha] = useState(hoy())
   const [vista, setVista] = useState<'grilla' | 'tabla'>('grilla')
-  const [todasFechas, setTodasFechas] = useState(false)
   const [diaBloqueado, setDiaBloqueado] = useState<{ motivo: string } | null>(null)
   const [mostrandoFormBloqueo, setMostrandoFormBloqueo] = useState(false)
   const [motivoInput, setMotivoInput] = useState('')
@@ -39,9 +39,9 @@ export default function Admin() {
 
   useEffect(() => {
     fetchTurnos()
-    if (!todasFechas) { fetchBloqueo(); fetchHorariosBloqueados() }
+    if (modo === 'dia') { fetchBloqueo(); fetchHorariosBloqueados() }
     else { setDiaBloqueado(null); setHorariosBloqueados(new Set()) }
-  }, [fecha, todasFechas])
+  }, [modo, fecha])
 
   const fetchTurnos = async () => {
     setLoading(true)
@@ -49,7 +49,8 @@ export default function Admin() {
       .from('turnos')
       .select('id, fecha, hora_inicio, hora_fin, simulador_id, created_at, email_verificacion, clientes ( nombre, telefono ), simuladores ( nombre )')
       .eq('negocio_id', negocio.id)
-    if (!todasFechas) query = query.eq('fecha', fecha)
+    if (modo === 'dia') query = query.eq('fecha', fecha)
+    else if (modo === 'proximos') query = query.gte('fecha', hoy())
     query = query.order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
     const { data, error } = await query
     if (!error && data) setTurnos(data as unknown as Turno[])
@@ -109,11 +110,11 @@ export default function Admin() {
     return new Date(`${fecha}T${hora}`) < new Date()
   }
 
-  const turnosFiltrados = (!todasFechas && !mostrarPasados)
+  const turnosFiltrados = modo === 'dia' && !mostrarPasados
     ? turnos.filter(t => !esPasado(t.fecha, t.hora_fin.slice(0, 5)))
     : turnos
 
-  const horariosFiltrados = (!todasFechas && !mostrarPasados)
+  const horariosFiltrados = !mostrarPasados
     ? HORARIOS.filter(hora => !esPasado(fecha, hora))
     : HORARIOS
 
@@ -128,6 +129,16 @@ export default function Admin() {
     weekday: 'long', day: 'numeric', month: 'long'
   })
 
+  const subtitulo = modo === 'proximos'
+    ? `Próximos turnos · ${turnosFiltrados.length} turnos`
+    : modo === 'todos'
+    ? `Todos los turnos · ${turnosFiltrados.length} turnos`
+    : `${fechaFormateada} · ${turnosFiltrados.length} turnos`
+
+  const navClass = (m: typeof modo) =>
+    'px-4 py-2 uppercase tracking-widest transition text-xs ' +
+    (modo === m ? 'bg-[var(--accent)] text-white' : 'text-gray-500 hover:text-white')
+
   return (
     <main className="min-h-screen bg-[var(--bg)] text-white p-8">
       <div className="max-w-5xl mx-auto">
@@ -136,16 +147,15 @@ export default function Admin() {
           <div>
             <p className="text-xs tracking-[0.4em] uppercase text-[var(--accent)] mb-1">Panel</p>
             <h1 className="text-3xl font-black uppercase">Admin</h1>
-            <p className="text-gray-600 text-sm mt-1 capitalize">{todasFechas ? 'Todas las fechas' : fechaFormateada} · {turnosFiltrados.length} turnos</p>
+            <p className="text-gray-600 text-sm mt-1 capitalize">{subtitulo}</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <button
-              onClick={() => { const next = !todasFechas; setTodasFechas(next); if (next) setVista('tabla') }}
-              className={'px-4 py-2 rounded-xl text-xs uppercase tracking-widest transition border ' + (todasFechas ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'border-white/10 text-gray-500 hover:text-white')}
-            >
-              Todos
-            </button>
-            {!todasFechas && (
+            <div className="flex border border-white/10 rounded-xl overflow-hidden text-xs">
+              <button onClick={() => setModo('proximos')} className={navClass('proximos')}>Próximos</button>
+              <button onClick={() => setModo('todos')} className={navClass('todos')}>Todos</button>
+              <button onClick={() => setModo('dia')} className={navClass('dia')}>Por día</button>
+            </div>
+            {modo === 'dia' && (
               <>
                 <button
                   onClick={() => setMostrarPasados(p => !p)}
@@ -174,8 +184,8 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Control de bloqueo */}
-        {!todasFechas && (
+        {/* Control de bloqueo — solo modo día */}
+        {modo === 'dia' && (
           <div className="mb-6">
             {diaBloqueado ? (
               <div className="flex items-center justify-between bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-5 py-3">
@@ -214,9 +224,7 @@ export default function Admin() {
 
         {loading ? (
           <p className="text-gray-600 tracking-widest uppercase text-sm">Cargando...</p>
-        ) : turnosFiltrados.length === 0 && vista === 'tabla' ? (
-          <p className="text-gray-600">No hay turnos para este día.</p>
-        ) : vista === 'grilla' ? (
+        ) : modo === 'dia' && vista === 'grilla' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
@@ -265,12 +273,14 @@ export default function Admin() {
               </tbody>
             </table>
           </div>
+        ) : turnosFiltrados.length === 0 ? (
+          <p className="text-gray-600">{modo === 'dia' ? 'No hay turnos para este día.' : 'No hay turnos.'}</p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-white/10">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  {todasFechas && <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Fecha</th>}
+                  {modo !== 'dia' && <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Fecha</th>}
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">{negocio.recursoNombre}</th>
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Cliente</th>
                   <th className="p-4 text-left text-xs uppercase tracking-widest text-gray-500">Telefono</th>
@@ -282,8 +292,11 @@ export default function Admin() {
               </thead>
               <tbody>
                 {turnosFiltrados.map((t) => (
-                  <tr key={t.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                    {todasFechas && <td className="p-4 text-gray-400 text-xs">{new Date(t.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</td>}
+                  <tr
+                    key={t.id}
+                    className={'border-b border-white/5 hover:bg-white/5 transition' + (modo === 'todos' && esPasado(t.fecha, t.hora_fin.slice(0, 5)) ? ' opacity-50' : '')}
+                  >
+                    {modo !== 'dia' && <td className="p-4 text-gray-400 text-xs">{new Date(t.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</td>}
                     <td className="p-4 font-medium">{RECURSOS.find(r => r.id === t.simulador_id)?.nombre ?? t.simuladores?.nombre}</td>
                     <td className="p-4">{t.clientes?.nombre}</td>
                     <td className="p-4 text-gray-400">{t.clientes?.telefono}</td>
