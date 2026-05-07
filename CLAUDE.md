@@ -236,7 +236,7 @@ RLS deshabilitado (misma anon key para todos).
 | `/cancelar/[token]` | Cancelación self-service, sin login |
 | `/cancelar` | Redirige a /mis-turnos |
 | `/mis-turnos` | Buscar turnos propios por teléfono |
-| `/admin` | Panel con tres modos: Próximos / Todos / Por día. Por día incluye grilla + tabla + bloqueos |
+| `/admin` | Panel con cuatro pestañas: Resumen / Próximos / Todos / Por día. Resumen muestra métricas de hoy, semana y mes. Por día incluye grilla + tabla + bloqueos |
 | `/api/notificar` | POST server-side → Twilio Content Templates: admin (TO_1/TO_2) + cliente |
 | `/api/validar-reserva` | POST server-side → valida nombre/teléfono y límite por IP antes del insert |
 
@@ -419,12 +419,13 @@ Implementado el 2026-05-03. Activo en los tres negocios.
 - **Endpoint `/api/validar-reserva`** — POST server-side llamado antes del insert. Valida nombre, teléfono y límite por IP. La IP se lee del header `x-forwarded-for` (Vercel la inyecta automáticamente en producción). En local siempre es `127.0.0.1`, lo que hace que el límite se consuma rápido al testear — limpiar la tabla `reservas_por_ip` entre pruebas si es necesario.
 
   **Reglas del nombre:**
-  - Exactamente un espacio (separa nombre y apellido)
-  - Cada parte: entre 3 y 15 letras
+  - Entre 2 y 4 partes separadas por espacios simples (acepta "Juan Pérez", "Juan Marcos Pereyra", "María de los Ángeles")
+  - Al menos 2 partes "reales" (no partículas): `de`, `del`, `la`, `las`, `los`, `el`, `y`, `da`, `do`, `dos` se omiten de las reglas de validación pero deben ser solo letras
+  - Cada parte real: entre 3 y 15 letras
   - Solo letras con acentos (á é í ó ú ü ñ y mayúsculas), sin números ni símbolos
-  - Cada parte debe tener al menos una vocal
-  - Cada parte no puede ser toda la misma letra (ej: "aaa")
-  - Blacklist case insensitive por parte: `test`, `prueba`, `asd`, `asdf`, `xxx`, `admin`, `null`, `undefined`, `nombre`, `user`, `cliente`, `nobody`, `fake`, `anonymous`
+  - Cada parte real debe tener al menos una vocal
+  - Cada parte real no puede ser toda la misma letra (ej: "aaa")
+  - Blacklist case insensitive por parte real: `test`, `prueba`, `asd`, `asdf`, `xxx`, `admin`, `null`, `undefined`, `nombre`, `user`, `cliente`, `nobody`, `fake`, `anonymous`
 
   **Reglas del teléfono:**
   - Solo dígitos
