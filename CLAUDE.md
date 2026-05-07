@@ -208,7 +208,7 @@ Sin esto los datos se mezclan entre negocios.
 
 **Índice:** `(negocio_id, ip, created_at DESC)`
 
-Usada por `/api/validar-reserva` para el rate limiting por IP. **Migración pendiente de ejecutar en Supabase** (ver Infraestructura pendiente).
+Usada por `/api/validar-reserva` para el rate limiting por IP. Migración ejecutada el 2026-05-03.
 
 ```sql
 CREATE TABLE reservas_por_ip (
@@ -348,10 +348,7 @@ ADMIN_PASSWORD=...
 
 ### Historial
 
-- **Número +15559391060** — descartado. Error 63112, WABA deshabilitada por Meta (rechazos de nombre para mostrar).
-- **Números +1 555...** — no son compatibles con WhatsApp Business API en producción. Usar siempre Twilio Local US numbers ($1.15/mes).
-- **Templates originales** — rechazados por Meta (ratio variables/texto insuficiente). Reemplazados por `copy_*` con emojis y más texto estático el 2026-05-06.
-- **Ticket Twilio #26701181** (P2, abierto 2026-05-03) — cerrado / reemplazado por número nuevo.
+- Números +1 555... y +15559391060 descartados. Ver historial en commits anteriores.
 
 ---
 
@@ -432,7 +429,7 @@ Implementado el 2026-05-03. Activo en los tres negocios.
   **Reglas del teléfono:**
   - Solo dígitos
   - Entre 10 y 11 caracteres (formato argentino, sin 0 ni 15)
-- **Tabla `reservas_por_ip`** — registra cada reserva con `negocio_id`, `ip` y `created_at`. El conteo es por ventana deslizante de 24hs. **Migración pendiente de ejecutar en Supabase.**
+- **Tabla `reservas_por_ip`** — registra cada reserva con `negocio_id`, `ip` y `created_at`. El conteo es por ventana deslizante de 24hs.
 - **Config `limiteReservasPorIP`** — campo en `features` de `NegocioConfig`. Valores: `lacancha` = 2, `sim-turnos` = 4, `prgrssv` = 1. Si no está definido, el endpoint omite el chequeo de IP.
 
 ---
@@ -444,8 +441,8 @@ Implementado el 2026-05-03. Activo en los tres negocios.
 - **Aprobar nombre "Gestia" en Meta** — display name en revisión por Meta. Pendiente aprobación final.
 - **Mercado Pago / seña** — Checkout Pro, requiere monotributo.
 - ~~**Auth admin server-side**~~ — implementado el 2026-05-05. `ADMIN_PASSWORD` en env var server-side, cookie httpOnly `admin_session`. Ver sección "Auth admin" abajo.
-- **RLS en Supabase** — anon key tiene acceso total a todas las tablas.
-- **Migración `reservas_por_ip`** — tabla creada el 2026-05-03, SQL listo en la sección de esquema. Pendiente ejecutar en Supabase. Sin ella, `/api/validar-reserva` devuelve 500 en los tres negocios.
+- ~~**RLS en Supabase**~~ — evaluado el 2026-05-07. Descartado por ahora: casi todo el acceso a BD es client-side con anon key, implementar RLS correctamente requeriría mover el admin a API routes server-side. Riesgo bajo dado el perfil del proyecto.
+- ~~**Migración `reservas_por_ip`**~~ — ejecutada el 2026-05-03, tabla confirmada con datos en Supabase.
 - **Timezone explícita en admin** — `created_at` resta 3hs hardcodeado (UTC-3).
 
 ## Bugs conocidos
