@@ -337,10 +337,20 @@ ADMIN_PASSWORD=...
 
 **`route.ts` ya usa Content Templates** (migrado 2026-05-01). Variables de entorno `TWILIO_CONTENT_SID_*` cargadas en los tres proyectos de Vercel.
 
+### Content Template SIDs activos
+
+| Variable | SID | Template |
+|----------|-----|----------|
+| `TWILIO_CONTENT_SID_CONFIRMACION_ADMIN` | `HXd50fd5a318b9321942f16ad21cac50fe` | `copy_confirmacion_admin` |
+| `TWILIO_CONTENT_SID_CONFIRMACION_CLIENTE` | `HX78cbecfbef0e7977710b9c22ea66e6d5` | `copy_confirmacion_cliente` |
+| `TWILIO_CONTENT_SID_CANCELACION_ADMIN` | `HX0361b5bc48e5e73b8af78b1ed1b7d25f` | `copy_cancelacion_admin` |
+| `TWILIO_CONTENT_SID_CANCELACION_CLIENTE` | `HXec0f51de4fb8e8f96fc92b875cfffeba` | `copy_cancelacion_cliente` |
+
 ### Historial
 
 - **Número +15559391060** — descartado. Error 63112, WABA deshabilitada por Meta (rechazos de nombre para mostrar).
 - **Números +1 555...** — no son compatibles con WhatsApp Business API en producción. Usar siempre Twilio Local US numbers ($1.15/mes).
+- **Templates originales** — rechazados por Meta (ratio variables/texto insuficiente). Reemplazados por `copy_*` con emojis y más texto estático el 2026-05-06.
 - **Ticket Twilio #26701181** (P2, abierto 2026-05-03) — cerrado / reemplazado por número nuevo.
 
 ---
