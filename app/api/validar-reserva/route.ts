@@ -9,19 +9,25 @@ const NOMBRE_BLACKLIST = new Set([
   'test', 'prueba', 'asd', 'asdf', 'xxx', 'admin', 'null', 'undefined',
   'nombre', 'user', 'cliente', 'nobody', 'fake', 'anonymous',
 ])
+const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'da', 'do', 'dos'])
 
 function validarNombre(nombre: string): string | null {
-  const partes = nombre.split(' ')
-  if (partes.length !== 2)
+  const partes = nombre.trim().split(/\s+/)
+  if (partes.length < 2 || partes.length > 4)
     return 'Ingresá tu nombre y apellido (ej: Juan Pérez)'
 
+  let partesReales = 0
   for (const parte of partes) {
-    if (parte.length < 3 || parte.length > 15) return 'El nombre ingresado no es válido'
     if (!SOLO_LETRAS.test(parte)) return 'El nombre ingresado no es válido'
+    if (PARTICULAS.has(parte.toLowerCase())) continue
+    partesReales++
+    if (parte.length < 3 || parte.length > 15) return 'El nombre ingresado no es válido'
     if (!VOCALES.test(parte)) return 'El nombre ingresado no es válido'
     if (parte.split('').every(c => c.toLowerCase() === parte[0].toLowerCase())) return 'El nombre ingresado no es válido'
     if (NOMBRE_BLACKLIST.has(parte.toLowerCase())) return 'El nombre ingresado no es válido'
   }
+
+  if (partesReales < 2) return 'Ingresá tu nombre y apellido (ej: Juan Pérez)'
 
   return null
 }
