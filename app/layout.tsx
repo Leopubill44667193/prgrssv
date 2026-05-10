@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
+import { Geist, Geist_Mono, Bebas_Neue, Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { negocio } from "@/config";
 
@@ -20,6 +20,21 @@ const geistMono = Geist_Mono({
 const bebasNeue = Bebas_Neue({
   weight: "400",
   variable: "--font-title",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const inter = Inter({
+  weight: ["300", "400", "500"],
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
   display: "swap",
 });
@@ -45,7 +60,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} ${negocio.fontTitle ? bebasNeue.variable : ""} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${negocio.fontTitle ? bebasNeue.variable : ""} ${inter.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <head>
         <meta name="facebook-domain-verification" content="tr0qkmbqr9zrskrr2i1togkqe9qaq5" />
@@ -64,9 +79,11 @@ export default function RootLayout({
           />
         )}
         {children}
-        <footer className="py-3 text-center text-xs text-white/20">
-          {negocio.direccion}
-        </footer>
+        {negocio.id !== 'landing' && (
+          <footer className="py-3 text-center text-xs text-white/20">
+            {negocio.direccion}
+          </footer>
+        )}
       </body>
     </html>
   );
