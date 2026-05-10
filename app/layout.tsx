@@ -39,13 +39,23 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+const isLanding = negocio.id === 'landing'
+
+const metaTitle = isLanding
+  ? 'reservaturnos.com.ar — Sistema de reservas online para negocios en Argentina'
+  : `${negocio.nombre} — Reservas`
+
+const metaDescription = isLanding
+  ? 'Que tus clientes reserven solos, mientras vos atendés. Sistema de reservas online con WhatsApp automático para negocios en Argentina.'
+  : `Reservá tu turno en ${negocio.nombre}. ${negocio.recursos.length} ${negocio.recursoNombre.toLowerCase()}s · Turnos de ${negocio.duracionMinutos} min · ${negocio.direccion}.`
+
 export const metadata: Metadata = {
-  title: `${negocio.nombre} — Reservas`,
-  description: `Reservá tu turno en ${negocio.nombre}. ${negocio.recursos.length} ${negocio.recursoNombre.toLowerCase()}s · Turnos de ${negocio.duracionMinutos} min · ${negocio.direccion}.`,
+  title: metaTitle,
+  description: metaDescription,
   openGraph: {
-    title: `${negocio.nombre} — Reservas`,
-    description: `Reservá tu turno en ${negocio.nombre}. ${negocio.recursos.length} ${negocio.recursoNombre.toLowerCase()}s · Turnos de ${negocio.duracionMinutos} min · ${negocio.direccion}.`,
-    siteName: negocio.nombre,
+    title: metaTitle,
+    description: metaDescription,
+    siteName: isLanding ? 'reservaturnos.com.ar' : negocio.nombre,
     locale: "es_AR",
     type: "website",
     images: [{ url: `/og-image-${negocio.id}.jpg`, width: 1024, height: 1024 }],
