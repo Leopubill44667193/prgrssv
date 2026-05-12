@@ -3,6 +3,7 @@ import simTurnos from './sim-turnos'
 import prgrssv from './prgrssv'
 import lacancha from './lacancha'
 import landing from './landing'
+import demoPadel from './demo-padel'
 
 // Agregá nuevos negocios acá
 const configs: Record<string, NegocioConfig> = {
@@ -10,6 +11,7 @@ const configs: Record<string, NegocioConfig> = {
   'prgrssv': prgrssv,
   'lacancha': lacancha,
   'landing': landing,
+  'demo-padel': demoPadel,
 }
 
 export { configs }

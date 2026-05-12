@@ -19,14 +19,30 @@ Sistema de reservas online configurable por negocio. Un solo repo, una sola base
 | `sim-turnos` | OC.Hobbies.Racing | Av. 3 de Febrero 283, Rojas | 4 simuladores, 60 min | 15:00-02:00 todos los días |
 | `prgrssv` | Prgrssv | Zeballos 2239 6A, Rosario | 1 peluquero, 30 min | 09:00-19:30 Lun-Vie |
 | `lacancha` | La Cancha Padel | Av. 20 de Diciembre 130, Rojas | 4 canchas, 90 min | 09:00-00:00 todos los días |
+| `demo-padel` | Club Demo Pádel | Av. Siempreviva 742, Rosario | 4 canchas, 90 min | 09:00-00:00 todos los días | ⚠️ pendiente: crear proyecto en Vercel y configurar variables de entorno |
 
 ## Dominios
 
 | Subdominio | Negocio |
 |------------|---------|
+| `reservaturnos.com.ar` (y www) | `landing` |
 | `lacancha.reservaturnos.com.ar` | `lacancha` |
 | `ochobbies.reservaturnos.com.ar` | `sim-turnos` |
 | `prgrssv.reservaturnos.com.ar` | `prgrssv` |
+
+## Landing comercial
+
+Existe un cuarto proyecto en Vercel llamado `reservaturnos-landing` que apunta al mismo repo y sirve el dominio raíz `reservaturnos.com.ar` (y www).
+
+- **Variable de entorno clave:** `NEXT_PUBLIC_NEGOCIO_ID=landing`
+- **Config:** `config/landing.ts` (valores neutros, no es un negocio real)
+- **Renderizado:** la función `LandingPage()` en `app/page.tsx` se activa cuando `negocio.id === 'landing'`. En cualquier otro caso se renderiza la home del negocio normal.
+- **Diseño:** dark mode editorial inspirado en efficast.ai. Fondo #080808, tipografías Instrument Serif (titulares) e Inter (cuerpo) cargadas via next/font/google en app/layout.tsx.
+- **Independencia visual:** la landing ignora las CSS variables --accent, --bg del config del negocio. Los colores están hardcodeados con Tailwind. Esto la hace visualmente independiente de los temas de cada negocio.
+
+**Adaptaciones en app/layout.tsx para el caso landing:**
+- El footer global con `negocio.direccion` se omite cuando `negocio.id === 'landing'` (la landing tiene su propio footer).
+- La `metadata` (title, description) usa valores específicos para la landing cuando `negocio.id === 'landing'`, en lugar de los genéricos que se arman con `negocio.nombre` y `negocio.recursos`.
 
 ---
 
