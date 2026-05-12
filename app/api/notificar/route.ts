@@ -34,10 +34,11 @@ export async function POST(req: NextRequest) {
   const sid = process.env.TWILIO_ACCOUNT_SID
   const token = process.env.TWILIO_AUTH_TOKEN
   const from = process.env.TWILIO_FROM
-  const to1 = process.env.TWILIO_TO_1
-  const to2 = process.env.TWILIO_TO_2
+  const tosAdmin = [1, 2, 3, 4, 5]
+    .map(i => process.env[`TWILIO_TO_${i}`])
+    .filter((v): v is string => !!v && v.trim() !== '')
 
-  if (!sid || !token || !from || !to1) {
+  if (!sid || !token || !from || tosAdmin.length === 0) {
     return NextResponse.json({ error: 'Twilio no configurado' }, { status: 500 })
   }
 
@@ -74,10 +75,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const promesas: Promise<boolean>[] = [
-      enviarTemplate(to1, sidAdmin, varsAdmin, sid, token, from),
       enviarTemplate(toCliente, sidCliente, varsCliente, sid, token, from),
+      ...tosAdmin.map(to => enviarTemplate(to, sidAdmin, varsAdmin, sid, token, from)),
     ]
-    if (to2) promesas.push(enviarTemplate(to2, sidAdmin, varsAdmin, sid, token, from))
 
     await Promise.all(promesas)
     return NextResponse.json({ ok: true })
